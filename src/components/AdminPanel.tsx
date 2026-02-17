@@ -6,15 +6,15 @@ import { ChevronDown, Settings, Check } from "lucide-react";
 
 interface AdminPanelProps {
   streamUrl: string;
-  onUrlChange: (url: string) => void;
+  onUrlChange: (url: string) => Promise<void>;
 }
 
 const AdminPanel = ({ streamUrl, onUrlChange }: AdminPanelProps) => {
   const [draft, setDraft] = useState(streamUrl);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    onUrlChange(draft);
+  const handleSave = async () => {
+    await onUrlChange(draft);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
