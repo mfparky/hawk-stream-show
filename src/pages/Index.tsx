@@ -3,17 +3,52 @@ import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import AdminPanel from "@/components/AdminPanel";
 import SubscribeBanner from "@/components/SubscribeBanner";
+import { supabase } from "@/lib/supabase";
 
-const STREAM_URL_KEY = "hawks-stream-url";
+const STREAM_URL_KEY = "stream_url";
 
 const Index = () => {
-  const [streamUrl, setStreamUrl] = useState(() => {
-    return localStorage.getItem(STREAM_URL_KEY) || "";
-  });
+  const [streamUrl, setStreamUrl] = useState("");
 
   useEffect(() => {
-    localStorage.setItem(STREAM_URL_KEY, streamUrl);
-  }, [streamUrl]);
+    // Load initial value from Supabase
+    supabase
+      .from("settings")
+      .select("value")
+      .eq("key", STREAM_URL_KEY)
+      .single()
+      .then(({ data }) => {
+        if (data) setStreamUrl(data.value);
+      });
+
+    // Subscribe to realtime updates so all viewers see URL changes live
+    const channel = supabase
+      .channel("settings-stream-url")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "settings",
+          filter: `key=eq.${STREAM_URL_KEY}`,
+        },
+        (payload) => {
+          setStreamUrl((payload.new as { value: string }).value);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleUrlChange = async (url: string) => {
+    setStreamUrl(url);
+    await supabase
+      .from("settings")
+      .upsert({ key: STREAM_URL_KEY, value: url, updated_at: new Date().toISOString() });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +90,7 @@ const Index = () => {
 
         {/* Admin Panel */}
         <section className="pb-8">
-          <AdminPanel streamUrl={streamUrl} onUrlChange={setStreamUrl} />
+          <AdminPanel streamUrl={streamUrl} onUrlChange={handleUrlChange} />
         </section>
       </main>
     </div>
