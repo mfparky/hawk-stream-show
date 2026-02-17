@@ -17,7 +17,7 @@ const GameChangerWidget = () => {
         (window as any).GC.team.schedule.init({
           target: "#gc-schedule-widget-44s1",
           widgetId: "ce44f476-dca7-49ff-a3e2-b11aa9c41335",
-          maxVerticalGamesVisible: 4,
+          maxVerticalGamesVisible: 2,
         });
       }
     };
