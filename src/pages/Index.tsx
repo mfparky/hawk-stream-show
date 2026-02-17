@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import AdminPanel from "@/components/AdminPanel";
+import SubscribeBanner from "@/components/SubscribeBanner";
 
 const STREAM_URL_KEY = "hawks-stream-url";
 
@@ -32,6 +33,8 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+        <SubscribeBanner />
+
         {/* Schedule / Scoreboard Widget */}
         <section>
           <h2 className="mb-3 text-xl font-semibold uppercase tracking-wide text-primary">
