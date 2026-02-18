@@ -47,7 +47,7 @@ const Index = () => {
       {/* Header — compact to give max room to the stream */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <img src="/favicon.ico" alt="Newmarket Hawks" className="h-8 w-8 shrink-0 rounded-full ring-2 ring-primary" />
+          <img src="/favicon.ico" alt="Newmarket Hawks" className="h-8 w-8 shrink-0" />
           <div>
             <h1 className="text-2xl font-bold uppercase tracking-wider text-primary leading-none">
               Newmarket Hawks
