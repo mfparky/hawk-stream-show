@@ -17,23 +17,20 @@ const SubscribeBanner = () =>
     style={{ background: "radial-gradient(circle, hsl(43 90% 55%), transparent 70%)" }} />
 
     <div className="px-5 pb-5 pt-6">
-      <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+      <div className="flex flex-col items-center gap-4 text-center">
         <img src="/favicon.ico" alt="Newmarket Hawks" className="h-14 w-14 shrink-0 drop-shadow-lg" />
-        <div className="flex-1">
-          <p className="text-lg font-bold uppercase tracking-widest text-primary" style={{ fontFamily: "Oswald, sans-serif" }}>2026 SEASON STARTS SOON
-
-        </p>
+        <div>
+          <p className="text-lg font-bold uppercase tracking-widest text-primary" style={{ fontFamily: "Oswald, sans-serif" }}>2026 SEASON STARTS SOON</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Subscribe to{" "}
             <span className="font-semibold text-primary">@Hawks12UAA</span> on YouTube to get notified when we go live.
           </p>
         </div>
         <a
-        href={CHANNEL_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex shrink-0 items-center gap-2 rounded-md bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-red-700 active:bg-red-800">
-
+          href={CHANNEL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-md bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-red-700 active:bg-red-800">
           <YouTubeIcon />
           Subscribe
         </a>
