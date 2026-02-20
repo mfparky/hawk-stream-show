@@ -60,7 +60,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-4 py-4 space-y-4">
+      <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
         {/* Live Stream — hero, full width */}
         <YouTubeEmbed url={streamUrl} />
 
