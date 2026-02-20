@@ -47,15 +47,13 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
     return () => window.removeEventListener("message", handler);
   }, [videoId]);
 
-  const watchUrl = videoId
-    ? `https://www.youtube.com/watch?v=${videoId}`
-    : url;
+  const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
 
   if (!videoId) {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-muted/30">
         <p className="text-muted-foreground text-lg font-medium" style={{ fontFamily: "Oswald, sans-serif" }}>
-          No live stream set — update the URL in the Admin panel below.
+          No live stream set — update the URL in the Admin panel.
         </p>
       </div>
     );
