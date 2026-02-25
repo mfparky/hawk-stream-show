@@ -62,7 +62,7 @@ const Index = () => {
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
         {/* Live Stream — hero, full width */}
-        {/* <YouTubeEmbed url={streamUrl} /> */}
+        <YouTubeEmbed url={streamUrl} />
 
         {/* Score + Subscribe — compact strip below the stream */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
