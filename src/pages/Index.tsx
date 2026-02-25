@@ -67,7 +67,7 @@ const Index = () => {
         {settingsLoaded && !streamUrl &&
         <div className="rounded-lg border border-border bg-card p-4">
             <p className="font-medium text-muted-foreground text-center text-lg">
-              Live stream will load closer to game time. See schedule below.
+              Stream will load closer to game time. See schedule below.
             </p>
           </div>
         }
