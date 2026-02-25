@@ -95,13 +95,21 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
           />
         </div>
       ) : (
-        /* Thumbnail + play button — no iframe until user taps, avoids black box on iOS */
+        /*
+         * Hawks-branded poster — no YouTube thumbnail.
+         * Live-stream thumbnails are black before the stream starts, and
+         * every "safe" bg-* class on this dark palette also looks black.
+         * A radial gradient anchored to the primary gold is the only reliable
+         * way to make this visually distinct from a broken/loading state.
+         */
         <button
           type="button"
           onClick={() => setPlayerActive(true)}
-          className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-card"
+          className="stream-poster group flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-primary/50"
           aria-label="Play Hawks live stream"
         >
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-600 shadow-2xl ring-4 ring-red-600/20 transition-all group-hover:scale-105 group-hover:bg-red-700">
           <img
             src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
             alt=""
@@ -114,6 +122,9 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-colors group-hover:bg-red-700">
               <PlayIcon />
             </div>
+            <p className="text-sm font-semibold uppercase tracking-widest text-primary/80" style={{ fontFamily: "Oswald, sans-serif" }}>
+              Watch Live Stream
+            </p>
           </div>
         </button>
       )}
