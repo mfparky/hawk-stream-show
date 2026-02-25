@@ -63,6 +63,15 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
+        {/* Notice tile — shown when no stream is active */}
+        {settingsLoaded && !streamUrl && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-sm font-medium text-muted-foreground text-center">
+              Live stream will load closer to game time. See schedule below.
+            </p>
+          </div>
+        )}
+
         {/* Live Stream — only rendered when admin has set a stream URL */}
         {settingsLoaded && streamUrl && <YouTubeEmbed url={streamUrl} />}
 
