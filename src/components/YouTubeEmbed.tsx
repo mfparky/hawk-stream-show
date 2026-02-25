@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface YouTubeEmbedProps {
   url: string;
@@ -21,17 +21,18 @@ const extractVideoId = (url: string): string | null => {
 
 const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
   const videoId = extractVideoId(url);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [embedBlocked, setEmbedBlocked] = useState(false);
 
-  // Reset blocked state whenever the URL changes
+  // Reset state whenever the URL changes
   useEffect(() => {
+    setIsPlaying(false);
     setEmbedBlocked(false);
   }, [url]);
 
   // YouTube posts a message when embedding is disabled (error codes 101 / 150)
   useEffect(() => {
-    if (!videoId) return;
+    if (!isPlaying || !videoId) return;
     const handler = (event: MessageEvent) => {
       if (!event.origin.includes("youtube.com")) return;
       try {
@@ -45,9 +46,10 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [videoId]);
+  }, [isPlaying, videoId]);
 
   const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 
   if (!videoId) {
     return (
@@ -75,17 +77,36 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
             Watch on YouTube
           </a>
         </div>
-      ) : (
+      ) : isPlaying ? (
         <div className="aspect-video w-full overflow-hidden rounded-lg border border-border">
           <iframe
-            ref={iframeRef}
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=0&enablejsapi=1`}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
             title="Hawks Live Stream"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="h-full w-full"
           />
         </div>
+      ) : (
+        <button
+          onClick={() => setIsPlaying(true)}
+          className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-black"
+          aria-label="Play stream"
+        >
+          {thumbnailUrl && (
+            <img
+              src={thumbnailUrl}
+              alt="Stream thumbnail"
+              className="absolute inset-0 h-full w-full object-cover opacity-80"
+            />
+          )}
+          {/* Play button */}
+          <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-transform group-hover:scale-110 group-active:scale-95">
+            <svg viewBox="0 0 24 24" fill="white" className="h-7 w-7 translate-x-0.5">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </button>
       )}
       <div className="text-right">
         <a
