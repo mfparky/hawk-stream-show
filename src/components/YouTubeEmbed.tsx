@@ -19,14 +19,22 @@ const extractVideoId = (url: string): string | null => {
   return null;
 };
 
+const PlayIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-10 w-10 fill-white drop-shadow" aria-hidden="true">
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
+
 const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
   const videoId = extractVideoId(url);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [embedBlocked, setEmbedBlocked] = useState(false);
+  const [playerActive, setPlayerActive] = useState(false);
 
-  // Reset blocked state whenever the URL changes
+  // Reset states whenever the URL changes
   useEffect(() => {
     setEmbedBlocked(false);
+    setPlayerActive(false);
   }, [url]);
 
   // YouTube posts a message when embedding is disabled (error codes 101 / 150)
@@ -75,17 +83,37 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
             Watch on YouTube
           </a>
         </div>
-      ) : (
+      ) : playerActive ? (
         <div className="aspect-video w-full overflow-hidden rounded-lg border border-border">
           <iframe
             ref={iframeRef}
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=0&enablejsapi=1`}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`}
             title="Hawks Live Stream"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="h-full w-full"
           />
         </div>
+      ) : (
+        /* Thumbnail + play button — no iframe until user taps, avoids black box on iOS */
+        <button
+          type="button"
+          onClick={() => setPlayerActive(true)}
+          className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-card"
+          aria-label="Play Hawks live stream"
+        >
+          <img
+            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/40">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-colors group-hover:bg-red-700">
+              <PlayIcon />
+            </div>
+          </div>
+        </button>
       )}
       <div className="text-right">
         <a
