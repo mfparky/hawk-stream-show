@@ -61,22 +61,3 @@
     font-family: 'Oswald', sans-serif;
   }
 }
-
-::-webkit-scrollbar {
-  display: none !important;
-}
-
-@layer utilities {
-  /*
-   * Used by the YouTubeEmbed poster state.
-   * A radial gold glow from the primary colour prevents the dark palette
-   * from making the pre-play placeholder indistinguishable from a black box.
-   */
-  .stream-poster {
-    background: radial-gradient(
-      ellipse 70% 55% at 50% 50%,
-      hsl(43 90% 55% / 0.15) 0%,
-      hsl(40 8% 12%) 100%
-    );
-  }
-}

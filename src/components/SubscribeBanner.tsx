@@ -18,7 +18,7 @@ const SubscribeBanner = () =>
 
     <div className="px-5 pb-5 pt-6">
       <div className="flex flex-col items-center gap-4 text-center">
-        <img src="/favicon.ico" alt="Newmarket Hawks" className="h-14 w-14 shrink-0 brightness-0 invert drop-shadow-lg" style={{ display: 'none' }} onLoad={(e) => { e.currentTarget.style.removeProperty('display'); }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+        <img src="/favicon.ico" alt="Newmarket Hawks" className="h-14 w-14 shrink-0 brightness-0 invert drop-shadow-lg" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
         <div>
           <p className="text-lg font-bold uppercase tracking-widest text-primary" style={{ fontFamily: "Oswald, sans-serif" }}>2026 SEASON STARTS SOON</p>
           <p className="mt-1 text-sm text-muted-foreground">
