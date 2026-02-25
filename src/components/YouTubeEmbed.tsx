@@ -61,7 +61,7 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-muted/30">
         <p className="text-muted-foreground text-lg font-large" style={{ fontFamily: "Oswald, sans-serif" }}>
-          No live stream set — admin will enable stream closer to game time.
+          No live stream available — admin will enable stream closer to game time.
         </p>
       </div>
     );
