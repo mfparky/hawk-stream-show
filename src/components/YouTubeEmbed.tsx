@@ -53,7 +53,7 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-muted/30 px-6 text-center">
         <p className="text-muted-foreground text-lg sm:text-xl md:text-2xl font-semibold">
-          No stream currently available.<br />Please check back closer to gametime.
+          No stream currently available.<br />Please check again closer to game time.
         </p>
       </div>
     );
