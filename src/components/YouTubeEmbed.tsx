@@ -57,8 +57,15 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
 
   const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
 
-  // Parent only renders this component when a URL is set; return null defensively if extraction fails
-  if (!videoId) return null;
+  if (!videoId) {
+    return (
+      <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-muted/30">
+        <p className="text-muted-foreground text-lg font-large" style={{ fontFamily: "Oswald, sans-serif" }}>
+          No live stream set — admin will enable stream closer to game time.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -103,6 +110,16 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
         >
           <div className="flex flex-col items-center gap-4">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-600 shadow-2xl ring-4 ring-red-600/20 transition-all group-hover:scale-105 group-hover:bg-red-700">
+          <img
+            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/40">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-colors group-hover:bg-red-700">
               <PlayIcon />
             </div>
             <p className="text-sm font-semibold uppercase tracking-widest text-primary/80" style={{ fontFamily: "Oswald, sans-serif" }}>
