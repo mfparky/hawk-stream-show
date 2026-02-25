@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Header from "@/components/Header";
 import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import SubscribeBanner from "@/components/SubscribeBanner";
@@ -44,24 +45,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header — compact to give max room to the stream */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M8.5 5.5C10 7.5 10.5 9.8 10 12s-2 4.5-3.5 6.5"/>
-            <path d="M15.5 5.5C14 7.5 13.5 9.8 14 12s2 4.5 3.5 6.5"/>
-          </svg>
-          <div>
-            <h1 className="text-2xl font-bold uppercase tracking-wider text-primary leading-none">
-              Newmarket Hawks
-            </h1>
-            <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground mt-0.5">
-              ⚾ Live Baseball
-            </p>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
