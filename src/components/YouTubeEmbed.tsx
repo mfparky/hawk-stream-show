@@ -57,15 +57,8 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
 
   const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
 
-  if (!videoId) {
-    return (
-      <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-muted/30">
-        <p className="text-muted-foreground text-lg font-medium" style={{ fontFamily: "Oswald, sans-serif" }}>
-          No live stream set — admin will enable stream closer to game time.
-        </p>
-      </div>
-    );
-  }
+  // Parent only renders this component when a URL is set; return null defensively if extraction fails
+  if (!videoId) return null;
 
   return (
     <div className="space-y-2">

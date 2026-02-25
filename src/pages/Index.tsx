@@ -8,6 +8,7 @@ const STREAM_URL_KEY = "stream_url";
 
 const Index = () => {
   const [streamUrl, setStreamUrl] = useState("");
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     // Load initial value from Supabase
@@ -18,6 +19,7 @@ const Index = () => {
       .single()
       .then(({ data }) => {
         if (data) setStreamUrl(data.value);
+        setSettingsLoaded(true);
       });
 
     // Subscribe to realtime updates so all viewers see URL changes live
@@ -61,8 +63,8 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
-        {/* Live Stream — hero, full width */}
-        <YouTubeEmbed url={streamUrl} />
+        {/* Live Stream — only rendered when admin has set a stream URL */}
+        {settingsLoaded && streamUrl && <YouTubeEmbed url={streamUrl} />}
 
         {/* Score + Subscribe — compact strip below the stream */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
