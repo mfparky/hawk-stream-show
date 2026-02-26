@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,18 +18,21 @@ interface AdminPanelProps {
   onSave: (settings: AdminSettings) => Promise<void>;
 }
 
-/** Geocode an address string via Nominatim → { lat, lon } or null */
-async function geocodeAddress(address: string): Promise<{ lat: number; lon: number; display: string } | null> {
+interface GeoResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
+
+async function searchAddress(query: string): Promise<GeoResult[]> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
+      `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`,
       { headers: { "User-Agent": "LovableApp/1.0" } }
     );
-    const data = await res.json();
-    if (!data || data.length === 0) return null;
-    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display: data[0].display_name };
+    return await res.json();
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -37,24 +40,63 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   const [draft, setDraft]   = useState<AdminSettings>(settings);
   const [saved, setSaved]   = useState(false);
   const [addrErr, setAddrErr] = useState(false);
-  const [geocoding, setGeocoding] = useState(false);
-  const [resolvedAddr, setResolvedAddr] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<GeoResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [selectedDisplay, setSelectedDisplay] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const set = (field: keyof AdminSettings) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setDraft((prev) => ({ ...prev, [field]: e.target.value }));
-      if (field === "venueAddress") { setAddrErr(false); setResolvedAddr(null); }
+      if (field === "venueAddress") {
+        setAddrErr(false);
+        setSelectedDisplay(null);
+      }
     };
 
-  const handleLookup = async () => {
-    if (!draft.venueAddress.trim()) return;
-    setGeocoding(true);
+  // Debounced address search
+  useEffect(() => {
+    const query = draft.venueAddress.trim();
+    if (query.length < 3 || selectedDisplay) {
+      setResults([]);
+      setShowResults(false);
+      return;
+    }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      const data = await searchAddress(query);
+      setResults(data);
+      setShowResults(data.length > 0);
+      setSearching(false);
+      if (data.length === 0) setAddrErr(true);
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [draft.venueAddress, selectedDisplay]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectResult = (r: GeoResult) => {
+    setDraft((prev) => ({
+      ...prev,
+      venueAddress: r.display_name,
+      venueLat: r.lat,
+      venueLon: r.lon,
+    }));
+    setSelectedDisplay(r.display_name);
+    setShowResults(false);
     setAddrErr(false);
-    const result = await geocodeAddress(draft.venueAddress);
-    setGeocoding(false);
-    if (!result) { setAddrErr(true); return; }
-    setDraft((prev) => ({ ...prev, venueLat: String(result.lat), venueLon: String(result.lon) }));
-    setResolvedAddr(result.display);
   };
 
   const handleSave = async () => {
@@ -123,28 +165,42 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
             <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
               Address
             </label>
-            <div className="flex gap-2">
-              <Input
-                value={draft.venueAddress}
-                onChange={set("venueAddress")}
-                placeholder="123 Main St, Toronto, ON"
-                className={addrErr ? "border-destructive flex-1" : "flex-1"}
-                onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleLookup}
-                disabled={geocoding || !draft.venueAddress.trim()}
-                className="gap-1.5 shrink-0"
-              >
-                {geocoding ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-                Lookup
-              </Button>
+            <div className="relative" ref={wrapperRef}>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    value={draft.venueAddress}
+                    onChange={set("venueAddress")}
+                    placeholder="Start typing an address…"
+                    className={addrErr ? "border-destructive" : ""}
+                  />
+                  {searching && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              {/* Results dropdown */}
+              {showResults && results.length > 0 && (
+                <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                  {results.map((r, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+                      onClick={() => selectResult(r)}
+                    >
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="text-foreground leading-snug">{r.display_name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            {resolvedAddr && (
-              <p className="mt-1.5 text-xs text-primary">
-                ✓ {resolvedAddr}
+
+            {selectedDisplay && (
+              <p className="mt-1.5 text-xs text-primary flex items-center gap-1">
+                <Check className="h-3 w-3" /> Selected
               </p>
             )}
             {draft.venueLat && draft.venueLon && (
@@ -152,10 +208,10 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
                 Coordinates: {draft.venueLat}, {draft.venueLon}
               </p>
             )}
-            {addrErr && (
+            {addrErr && !showResults && (
               <div className="mt-1.5 flex items-center gap-1.5 text-xs text-destructive">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                Could not find that address. Try a more specific query.
+                No results found. Try a different search.
               </div>
             )}
           </section>
