@@ -12,11 +12,11 @@ const Index = () => {
   const venue        = useVenueSettings();
 
   // Auto-detect the live stream from the YouTube channel when no manual URL is set
-  const autoVideoId  = useYouTubeLive(streamUrl ? null : venue.channelId);
+  const autoVideoId  = useYouTubeLive(streamUrl ? null : (venue.channelId || "UCEjeKZZC1HKPVfxQHlS6cqQ"));
   const autoUrl      = autoVideoId ? `https://www.youtube.com/watch?v=${autoVideoId}` : "";
 
   const activeUrl    = streamUrl || autoUrl;
-  const hasVenue     = venue.venueLat !== null && venue.venueLon !== null && venue.venueName;
+  const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
 
   return (
     <div className="min-h-screen bg-background">

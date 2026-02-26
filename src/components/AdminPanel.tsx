@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, Check, AlertCircle } from "lucide-react";
+import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin } from "lucide-react";
 
 export interface AdminSettings {
   streamUrl:    string;
   channelId:    string;
   venueName:    string;
-  venueAddress: string; // stores the raw "lat, lon" string the user pastes
+  venueAddress: string;
   venueLat:     string;
   venueLon:     string;
 }
@@ -18,38 +18,96 @@ interface AdminPanelProps {
   onSave: (settings: AdminSettings) => Promise<void>;
 }
 
-/** Parse "lat, lon" or "lat lon" → { lat, lon } or null if invalid. */
-function parseCoords(raw: string): { lat: number; lon: number } | null {
-  const parts = raw.trim().split(/[\s,]+/);
-  if (parts.length !== 2) return null;
-  const lat = parseFloat(parts[0]);
-  const lon = parseFloat(parts[1]);
-  if (isNaN(lat) || isNaN(lon)) return null;
-  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
-  return { lat, lon };
+interface GeoResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
+
+async function searchAddress(query: string): Promise<GeoResult[]> {
+  try {
+    const params = new URLSearchParams({
+      format: "json",
+      limit: "5",
+      q: query,
+      countrycodes: "ca",
+      addressdetails: "1",
+    });
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params}`,
+      { headers: { "User-Agent": "LovableApp/1.0" } }
+    );
+    return await res.json();
+  } catch {
+    return [];
+  }
 }
 
 const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   const [draft, setDraft]   = useState<AdminSettings>(settings);
   const [saved, setSaved]   = useState(false);
-  const [coordErr, setCoordErr] = useState(false);
+  const [addrErr, setAddrErr] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<GeoResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [selectedDisplay, setSelectedDisplay] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const set = (field: keyof AdminSettings) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setDraft((prev) => ({ ...prev, [field]: e.target.value }));
-      if (field === "venueAddress") setCoordErr(false);
+      if (field === "venueAddress") {
+        setAddrErr(false);
+        setSelectedDisplay(null);
+      }
     };
 
-  const handleSave = async () => {
-    let toSave = { ...draft };
-
-    if (draft.venueAddress.trim()) {
-      const parsed = parseCoords(draft.venueAddress);
-      if (!parsed) { setCoordErr(true); return; }
-      toSave = { ...toSave, venueLat: String(parsed.lat), venueLon: String(parsed.lon) };
+  // Debounced address search
+  useEffect(() => {
+    const query = draft.venueAddress.trim();
+    if (query.length < 3 || selectedDisplay) {
+      setResults([]);
+      setShowResults(false);
+      return;
     }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      const data = await searchAddress(query);
+      setResults(data);
+      setShowResults(data.length > 0);
+      setSearching(false);
+      if (data.length === 0) setAddrErr(true);
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [draft.venueAddress, selectedDisplay]);
 
-    await onSave(toSave);
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectResult = (r: GeoResult) => {
+    setDraft((prev) => ({
+      ...prev,
+      venueAddress: r.display_name,
+      venueLat: r.lat,
+      venueLon: r.lon,
+    }));
+    setSelectedDisplay(r.display_name);
+    setShowResults(false);
+    setAddrErr(false);
+  };
+
+  const handleSave = async () => {
+    await onSave(draft);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -112,21 +170,55 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               placeholder="Newmarket Baseball Stadium"
             />
             <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              Coordinates
+              Address
             </label>
-            <Input
-              value={draft.venueAddress}
-              onChange={set("venueAddress")}
-              placeholder="44.0529, -79.4611"
-              className={coordErr ? "border-destructive" : ""}
-            />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Paste latitude and longitude from Google Maps (right-click a location → copy coordinates).
-            </p>
-            {coordErr && (
+            <div className="relative" ref={wrapperRef}>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    value={draft.venueAddress}
+                    onChange={set("venueAddress")}
+                    placeholder="Start typing an address…"
+                    className={addrErr ? "border-destructive" : ""}
+                  />
+                  {searching && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              {/* Results dropdown */}
+              {showResults && results.length > 0 && (
+                <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                  {results.map((r, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+                      onClick={() => selectResult(r)}
+                    >
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="text-foreground leading-snug">{r.display_name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selectedDisplay && (
+              <p className="mt-1.5 text-xs text-primary flex items-center gap-1">
+                <Check className="h-3 w-3" /> Selected
+              </p>
+            )}
+            {draft.venueLat && draft.venueLon && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Coordinates: {draft.venueLat}, {draft.venueLon}
+              </p>
+            )}
+            {addrErr && !showResults && (
               <div className="mt-1.5 flex items-center gap-1.5 text-xs text-destructive">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                Enter valid coordinates, e.g. 44.0529, -79.4611
+                No results found. Try a different search.
               </div>
             )}
           </section>
