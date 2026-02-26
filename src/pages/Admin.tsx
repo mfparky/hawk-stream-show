@@ -1,47 +1,62 @@
 import { useState, useEffect } from "react";
-import AdminPanel from "@/components/AdminPanel";
+import AdminPanel, { AdminSettings } from "@/components/AdminPanel";
+import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
+import {
+  STREAM_URL_KEY,
+  CHANNEL_ID_KEY,
+  VENUE_NAME_KEY,
+  VENUE_LAT_KEY,
+  VENUE_LON_KEY,
+} from "@/lib/constants";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-const STREAM_URL_KEY = "stream_url";
+const KEYS = [STREAM_URL_KEY, CHANNEL_ID_KEY, VENUE_NAME_KEY, VENUE_LAT_KEY, VENUE_LON_KEY];
 
 const Admin = () => {
-  const [streamUrl, setStreamUrl] = useState("");
+  const [settings, setSettings] = useState<AdminSettings>({
+    streamUrl:  "",
+    channelId:  "",
+    venueName:  "",
+    venueLat:   "",
+    venueLon:   "",
+  });
 
   useEffect(() => {
     supabase
       .from("settings")
-      .select("value")
-      .eq("key", STREAM_URL_KEY)
-      .single()
+      .select("key, value")
+      .in("key", KEYS)
       .then(({ data }) => {
-        if (data) setStreamUrl(data.value);
+        if (!data) return;
+        const map = Object.fromEntries(data.map((r) => [r.key, r.value]));
+        setSettings({
+          streamUrl:  map[STREAM_URL_KEY]  ?? "",
+          channelId:  map[CHANNEL_ID_KEY]  ?? "",
+          venueName:  map[VENUE_NAME_KEY]  ?? "",
+          venueLat:   map[VENUE_LAT_KEY]   ?? "",
+          venueLon:   map[VENUE_LON_KEY]   ?? "",
+        });
       });
   }, []);
 
-  const handleUrlChange = async (url: string) => {
-    setStreamUrl(url);
-    await supabase
-      .from("settings")
-      .upsert({ key: STREAM_URL_KEY, value: url, updated_at: new Date().toISOString() });
+  const handleSave = async (next: AdminSettings) => {
+    setSettings(next);
+    const rows = [
+      { key: STREAM_URL_KEY, value: next.streamUrl },
+      { key: CHANNEL_ID_KEY, value: next.channelId },
+      { key: VENUE_NAME_KEY, value: next.venueName },
+      { key: VENUE_LAT_KEY,  value: next.venueLat  },
+      { key: VENUE_LON_KEY,  value: next.venueLon  },
+    ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
+
+    await supabase.from("settings").upsert(rows);
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <img src="/favicon.ico" alt="Newmarket Hawks" className="h-8 w-8 shrink-0 brightness-0 invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          <div>
-            <h1 className="text-2xl font-bold uppercase tracking-wider text-primary leading-none">
-              Newmarket Hawks
-            </h1>
-            <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground mt-0.5">
-              Admin Panel
-            </p>
-          </div>
-        </div>
-      </header>
+      <Header subtitle="Admin Panel" />
 
       <main className="mx-auto max-w-2xl px-4 py-8 space-y-6">
         <Link
@@ -52,7 +67,7 @@ const Admin = () => {
           Back to stream
         </Link>
 
-        <AdminPanel streamUrl={streamUrl} onUrlChange={handleUrlChange} />
+        <AdminPanel settings={settings} onSave={handleSave} />
       </main>
     </div>
   );
