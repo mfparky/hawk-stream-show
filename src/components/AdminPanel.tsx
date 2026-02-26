@@ -26,8 +26,15 @@ interface GeoResult {
 
 async function searchAddress(query: string): Promise<GeoResult[]> {
   try {
+    const params = new URLSearchParams({
+      format: "json",
+      limit: "5",
+      q: query,
+      countrycodes: "ca",
+      addressdetails: "1",
+    });
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`,
+      `https://nominatim.openstreetmap.org/search?${params}`,
       { headers: { "User-Agent": "LovableApp/1.0" } }
     );
     return await res.json();
