@@ -2,14 +2,15 @@ import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, Check } from "lucide-react";
+import { ChevronDown, Settings, Check, MapPin, AlertCircle, Loader2 } from "lucide-react";
 
 export interface AdminSettings {
-  streamUrl:   string;
-  channelId:   string;
-  venueName:   string;
-  venueLat:    string;
-  venueLon:    string;
+  streamUrl:    string;
+  channelId:    string;
+  venueName:    string;
+  venueAddress: string;
+  venueLat:     string;
+  venueLon:     string;
 }
 
 interface AdminPanelProps {
@@ -17,17 +18,71 @@ interface AdminPanelProps {
   onSave: (settings: AdminSettings) => Promise<void>;
 }
 
+interface GeoResult {
+  status: "idle" | "loading" | "ok" | "error";
+  displayName?: string;
+  lat?: number;
+  lon?: number;
+  errorMsg?: string;
+}
+
+async function geocodeAddress(
+  address: string
+): Promise<{ lat: number; lon: number; displayName: string } | null> {
+  const url =
+    `https://nominatim.openstreetmap.org/search` +
+    `?q=${encodeURIComponent(address)}&format=json&limit=1`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const results = await res.json();
+  if (!results.length) return null;
+  const { lat, lon, display_name } = results[0];
+  return { lat: parseFloat(lat), lon: parseFloat(lon), displayName: display_name };
+}
+
 const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
-  const [draft, setDraft] = useState<AdminSettings>(settings);
-  const [saved, setSaved] = useState(false);
+  const [draft, setDraft]       = useState<AdminSettings>(settings);
+  const [saved, setSaved]       = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [geo, setGeo]           = useState<GeoResult>({ status: "idle" });
 
   const set = (field: keyof AdminSettings) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setDraft((prev) => ({ ...prev, [field]: e.target.value }));
+      // Clear geocode result when address changes
+      if (field === "venueAddress") setGeo({ status: "idle" });
+    };
 
   const handleSave = async () => {
-    await onSave(draft);
+    setSaving(true);
+    let toSave = { ...draft };
+
+    // Geocode if address is present
+    if (draft.venueAddress.trim()) {
+      setGeo({ status: "loading" });
+      const result = await geocodeAddress(draft.venueAddress.trim());
+      if (result) {
+        setGeo({
+          status:      "ok",
+          displayName: result.displayName,
+          lat:         result.lat,
+          lon:         result.lon,
+        });
+        toSave = {
+          ...toSave,
+          venueLat: String(result.lat),
+          venueLon: String(result.lon),
+        };
+      } else {
+        setGeo({ status: "error", errorMsg: "Address not found — check spelling and try again." });
+        setSaving(false);
+        return; // Don't save if geocode failed
+      }
+    }
+
+    await onSave(toSave);
     setSaved(true);
+    setSaving(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -88,41 +143,53 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               onChange={set("venueName")}
               placeholder="Newmarket Baseball Stadium"
             />
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                  Latitude
-                </label>
-                <Input
-                  value={draft.venueLat}
-                  onChange={set("venueLat")}
-                  placeholder="44.0594"
-                  type="number"
-                  step="any"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                  Longitude
-                </label>
-                <Input
-                  value={draft.venueLon}
-                  onChange={set("venueLon")}
-                  placeholder="-79.4608"
-                  type="number"
-                  step="any"
-                />
-              </div>
-            </div>
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              Venue Address
+            </label>
+            <Input
+              value={draft.venueAddress}
+              onChange={set("venueAddress")}
+              placeholder="Paste address from Google Maps…"
+            />
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Used for the weather widget and venue map shown to viewers.
-              Right-click any location on Google Maps → "What's here?" to get coordinates.
+              Copy the address from Google Maps (or any map app) and paste it here.
+              The coordinates are looked up automatically on save.
             </p>
+
+            {/* Geocode feedback */}
+            {geo.status === "loading" && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Looking up address…
+              </div>
+            )}
+            {geo.status === "ok" && (
+              <div className="mt-2 flex items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  <strong>Resolved:</strong> {geo.displayName}
+                  <br />
+                  <span className="text-muted-foreground font-mono">
+                    {geo.lat?.toFixed(5)}, {geo.lon?.toFixed(5)}
+                  </span>
+                </span>
+              </div>
+            )}
+            {geo.status === "error" && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                {geo.errorMsg}
+              </div>
+            )}
           </section>
 
-          <Button onClick={handleSave} className="gap-1.5">
-            {saved ? <Check className="h-4 w-4" /> : null}
-            {saved ? "Saved" : "Save all settings"}
+          <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+            {saving
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : saved
+                ? <Check className="h-4 w-4" />
+                : null}
+            {saving ? "Saving…" : saved ? "Saved" : "Save all settings"}
           </Button>
         </div>
       </CollapsibleContent>

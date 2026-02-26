@@ -27,6 +27,9 @@ const Index = () => {
         {/* Live Stream — hero, full width */}
         <YouTubeEmbed url={activeUrl} />
 
+        {/* Subscribe banner — full width, between video and scoreboard */}
+        <SubscribeBanner />
+
         {/* Schedule | Right column */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Schedule — 2/3 */}
@@ -40,23 +43,20 @@ const Index = () => {
           </div>
 
           {/* Right sidebar — 1/3 */}
-          <div className="md:col-span-1 flex flex-col gap-4">
-            {hasVenue && (
-              <>
-                <WeatherWidget
-                  lat={venue.venueLat!}
-                  lon={venue.venueLon!}
-                  venueName={venue.venueName!}
-                />
-                <VenueMap
-                  lat={venue.venueLat!}
-                  lon={venue.venueLon!}
-                  venueName={venue.venueName!}
-                />
-              </>
-            )}
-            <SubscribeBanner />
-          </div>
+          {hasVenue && (
+            <div className="md:col-span-1 flex flex-col gap-4">
+              <WeatherWidget
+                lat={venue.venueLat!}
+                lon={venue.venueLon!}
+                venueName={venue.venueName!}
+              />
+              <VenueMap
+                lat={venue.venueLat!}
+                lon={venue.venueLon!}
+                venueName={venue.venueName!}
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>
