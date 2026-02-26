@@ -2,13 +2,13 @@ import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, Check, MapPin, AlertCircle, Loader2 } from "lucide-react";
+import { ChevronDown, Settings, Check, AlertCircle } from "lucide-react";
 
 export interface AdminSettings {
   streamUrl:    string;
   channelId:    string;
   venueName:    string;
-  venueAddress: string;
+  venueAddress: string; // stores the raw "lat, lon" string the user pastes
   venueLat:     string;
   venueLon:     string;
 }
@@ -18,87 +18,39 @@ interface AdminPanelProps {
   onSave: (settings: AdminSettings) => Promise<void>;
 }
 
-interface GeoResult {
-  status: "idle" | "loading" | "ok" | "error";
-  displayName?: string;
-  lat?: number;
-  lon?: number;
-  errorMsg?: string;
-}
-
-async function nominatim(
-  address: string,
-  countrycodes?: string,
-): Promise<{ lat: number; lon: number; displayName: string } | null> {
-  const params = new URLSearchParams({
-    q:      address,
-    format: "json",
-    limit:  "1",
-    addressdetails: "1",
-  });
-  if (countrycodes) params.set("countrycodes", countrycodes);
-
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?${params}`,
-    { headers: { "Accept-Language": "en" } },
-  );
-  if (!res.ok) return null;
-  const results = await res.json();
-  if (!results.length) return null;
-  const { lat, lon, display_name } = results[0];
-  return { lat: parseFloat(lat), lon: parseFloat(lon), displayName: display_name };
-}
-
-async function geocodeAddress(
-  address: string,
-): Promise<{ lat: number; lon: number; displayName: string } | null> {
-  // Try Canada-restricted first (better precision for ON postal codes, province abbrevs, etc.)
-  return (await nominatim(address, "ca")) ?? (await nominatim(address));
+/** Parse "lat, lon" or "lat lon" → { lat, lon } or null if invalid. */
+function parseCoords(raw: string): { lat: number; lon: number } | null {
+  const parts = raw.trim().split(/[\s,]+/);
+  if (parts.length !== 2) return null;
+  const lat = parseFloat(parts[0]);
+  const lon = parseFloat(parts[1]);
+  if (isNaN(lat) || isNaN(lon)) return null;
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+  return { lat, lon };
 }
 
 const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
-  const [draft, setDraft]       = useState<AdminSettings>(settings);
-  const [saved, setSaved]       = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [geo, setGeo]           = useState<GeoResult>({ status: "idle" });
+  const [draft, setDraft]   = useState<AdminSettings>(settings);
+  const [saved, setSaved]   = useState(false);
+  const [coordErr, setCoordErr] = useState(false);
 
   const set = (field: keyof AdminSettings) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setDraft((prev) => ({ ...prev, [field]: e.target.value }));
-      // Clear geocode result when address changes
-      if (field === "venueAddress") setGeo({ status: "idle" });
+      if (field === "venueAddress") setCoordErr(false);
     };
 
   const handleSave = async () => {
-    setSaving(true);
     let toSave = { ...draft };
 
-    // Geocode if address is present
     if (draft.venueAddress.trim()) {
-      setGeo({ status: "loading" });
-      const result = await geocodeAddress(draft.venueAddress.trim());
-      if (result) {
-        setGeo({
-          status:      "ok",
-          displayName: result.displayName,
-          lat:         result.lat,
-          lon:         result.lon,
-        });
-        toSave = {
-          ...toSave,
-          venueLat: String(result.lat),
-          venueLon: String(result.lon),
-        };
-      } else {
-        setGeo({ status: "error", errorMsg: "Address not found — check spelling and try again." });
-        setSaving(false);
-        return; // Don't save if geocode failed
-      }
+      const parsed = parseCoords(draft.venueAddress);
+      if (!parsed) { setCoordErr(true); return; }
+      toSave = { ...toSave, venueLat: String(parsed.lat), venueLon: String(parsed.lon) };
     }
 
     await onSave(toSave);
     setSaved(true);
-    setSaving(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -160,52 +112,28 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               placeholder="Newmarket Baseball Stadium"
             />
             <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              Venue Address
+              Coordinates
             </label>
             <Input
               value={draft.venueAddress}
               onChange={set("venueAddress")}
-              placeholder="e.g. 100 Botsford St, Newmarket, ON L3Y 1A1"
+              placeholder="44.0529, -79.4611"
+              className={coordErr ? "border-destructive" : ""}
             />
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Paste any Canadian address (street, city, province, postal code).
-              Coordinates are looked up automatically on save.
+              Paste latitude and longitude from Google Maps (right-click a location → copy coordinates).
             </p>
-
-            {/* Geocode feedback */}
-            {geo.status === "loading" && (
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Looking up address…
-              </div>
-            )}
-            {geo.status === "ok" && (
-              <div className="mt-2 flex items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <span>
-                  <strong>Resolved:</strong> {geo.displayName}
-                  <br />
-                  <span className="text-muted-foreground font-mono">
-                    {geo.lat?.toFixed(5)}, {geo.lon?.toFixed(5)}
-                  </span>
-                </span>
-              </div>
-            )}
-            {geo.status === "error" && (
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
+            {coordErr && (
+              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-destructive">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                {geo.errorMsg}
+                Enter valid coordinates, e.g. 44.0529, -79.4611
               </div>
             )}
           </section>
 
-          <Button onClick={handleSave} disabled={saving} className="gap-1.5">
-            {saving
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : saved
-                ? <Check className="h-4 w-4" />
-                : null}
-            {saving ? "Saving…" : saved ? "Saved" : "Save all settings"}
+          <Button onClick={handleSave} className="gap-1.5">
+            {saved && <Check className="h-4 w-4" />}
+            {saved ? "Saved" : "Save all settings"}
           </Button>
         </div>
       </CollapsibleContent>
