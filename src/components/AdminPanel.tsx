@@ -26,18 +26,34 @@ interface GeoResult {
   errorMsg?: string;
 }
 
-async function geocodeAddress(
-  address: string
+async function nominatim(
+  address: string,
+  countrycodes?: string,
 ): Promise<{ lat: number; lon: number; displayName: string } | null> {
-  const url =
-    `https://nominatim.openstreetmap.org/search` +
-    `?q=${encodeURIComponent(address)}&format=json&limit=1`;
-  const res = await fetch(url);
+  const params = new URLSearchParams({
+    q:      address,
+    format: "json",
+    limit:  "1",
+    addressdetails: "1",
+  });
+  if (countrycodes) params.set("countrycodes", countrycodes);
+
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?${params}`,
+    { headers: { "Accept-Language": "en" } },
+  );
   if (!res.ok) return null;
   const results = await res.json();
   if (!results.length) return null;
   const { lat, lon, display_name } = results[0];
   return { lat: parseFloat(lat), lon: parseFloat(lon), displayName: display_name };
+}
+
+async function geocodeAddress(
+  address: string,
+): Promise<{ lat: number; lon: number; displayName: string } | null> {
+  // Try Canada-restricted first (better precision for ON postal codes, province abbrevs, etc.)
+  return (await nominatim(address, "ca")) ?? (await nominatim(address));
 }
 
 const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
@@ -149,11 +165,11 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
             <Input
               value={draft.venueAddress}
               onChange={set("venueAddress")}
-              placeholder="Paste address from Google Maps…"
+              placeholder="e.g. 100 Botsford St, Newmarket, ON L3Y 1A1"
             />
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Copy the address from Google Maps (or any map app) and paste it here.
-              The coordinates are looked up automatically on save.
+              Paste any Canadian address (street, city, province, postal code).
+              Coordinates are looked up automatically on save.
             </p>
 
             {/* Geocode feedback */}
