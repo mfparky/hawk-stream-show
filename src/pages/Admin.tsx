@@ -6,21 +6,23 @@ import {
   STREAM_URL_KEY,
   CHANNEL_ID_KEY,
   VENUE_NAME_KEY,
+  VENUE_ADDRESS_KEY,
   VENUE_LAT_KEY,
   VENUE_LON_KEY,
 } from "@/lib/constants";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-const KEYS = [STREAM_URL_KEY, CHANNEL_ID_KEY, VENUE_NAME_KEY, VENUE_LAT_KEY, VENUE_LON_KEY];
+const KEYS = [STREAM_URL_KEY, CHANNEL_ID_KEY, VENUE_NAME_KEY, VENUE_ADDRESS_KEY, VENUE_LAT_KEY, VENUE_LON_KEY];
 
 const Admin = () => {
   const [settings, setSettings] = useState<AdminSettings>({
-    streamUrl:  "",
-    channelId:  "",
-    venueName:  "",
-    venueLat:   "",
-    venueLon:   "",
+    streamUrl:    "",
+    channelId:    "",
+    venueName:    "",
+    venueAddress: "",
+    venueLat:     "",
+    venueLon:     "",
   });
 
   useEffect(() => {
@@ -32,11 +34,12 @@ const Admin = () => {
         if (!data) return;
         const map = Object.fromEntries(data.map((r) => [r.key, r.value]));
         setSettings({
-          streamUrl:  map[STREAM_URL_KEY]  ?? "",
-          channelId:  map[CHANNEL_ID_KEY]  ?? "",
-          venueName:  map[VENUE_NAME_KEY]  ?? "",
-          venueLat:   map[VENUE_LAT_KEY]   ?? "",
-          venueLon:   map[VENUE_LON_KEY]   ?? "",
+          streamUrl:    map[STREAM_URL_KEY]    ?? "",
+          channelId:    map[CHANNEL_ID_KEY]    ?? "",
+          venueName:    map[VENUE_NAME_KEY]    ?? "",
+          venueAddress: map[VENUE_ADDRESS_KEY] ?? "",
+          venueLat:     map[VENUE_LAT_KEY]     ?? "",
+          venueLon:     map[VENUE_LON_KEY]     ?? "",
         });
       });
   }, []);
@@ -44,11 +47,12 @@ const Admin = () => {
   const handleSave = async (next: AdminSettings) => {
     setSettings(next);
     const rows = [
-      { key: STREAM_URL_KEY, value: next.streamUrl },
-      { key: CHANNEL_ID_KEY, value: next.channelId },
-      { key: VENUE_NAME_KEY, value: next.venueName },
-      { key: VENUE_LAT_KEY,  value: next.venueLat  },
-      { key: VENUE_LON_KEY,  value: next.venueLon  },
+      { key: STREAM_URL_KEY,    value: next.streamUrl    },
+      { key: CHANNEL_ID_KEY,    value: next.channelId    },
+      { key: VENUE_NAME_KEY,    value: next.venueName    },
+      { key: VENUE_ADDRESS_KEY, value: next.venueAddress },
+      { key: VENUE_LAT_KEY,     value: next.venueLat     },
+      { key: VENUE_LON_KEY,     value: next.venueLon     },
     ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
 
     await supabase.from("settings").upsert(rows);
