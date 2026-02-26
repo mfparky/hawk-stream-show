@@ -16,7 +16,7 @@ const Index = () => {
   const autoUrl      = autoVideoId ? `https://www.youtube.com/watch?v=${autoVideoId}` : "";
 
   const activeUrl    = streamUrl || autoUrl;
-  const hasVenue     = venue.venueLat !== null && venue.venueLon !== null && venue.venueName;
+  const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
 
   return (
     <div className="min-h-screen bg-background">
