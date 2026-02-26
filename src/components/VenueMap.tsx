@@ -6,7 +6,7 @@ interface VenueMapProps {
 
 const VenueMap = ({ lat, lon, venueName }: VenueMapProps) => {
   // Bounding box: ±0.015° around the venue (~1.5 km)
-  const delta = 0.005;
+  const delta = 0.001;
   const bbox = [lon - delta, lat - delta, lon + delta, lat + delta].join(",");
   const embedUrl =
     `https://www.openstreetmap.org/export/embed.html` + `?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
