@@ -18,11 +18,7 @@ const SubscribeBanner = () =>
 
     <div className="px-5 pb-5 pt-6">
       <div className="flex flex-col items-center gap-4 text-center">
-        <svg viewBox="0 0 24 24" className="h-14 w-14 shrink-0 text-primary drop-shadow-lg" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M8.5 5.5C10 7.5 10.5 9.8 10 12s-2 4.5-3.5 6.5"/>
-          <path d="M15.5 5.5C14 7.5 13.5 9.8 14 12s2 4.5 3.5 6.5"/>
-        </svg>
+        <img src="/favicon.ico" alt="Newmarket Hawks" className="h-14 w-14 shrink-0 drop-shadow-lg" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
         <div>
           <p className="text-lg font-bold uppercase tracking-widest text-primary" style={{ fontFamily: "Oswald, sans-serif" }}>2026 SEASON STARTS SOON</p>
           <p className="mt-1 text-sm text-muted-foreground">
