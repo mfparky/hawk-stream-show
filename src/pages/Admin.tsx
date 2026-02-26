@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import AdminPanel, { AdminSettings } from "@/components/AdminPanel";
 import Header from "@/components/Header";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import {
   STREAM_URL_KEY,
   CHANNEL_ID_KEY,
