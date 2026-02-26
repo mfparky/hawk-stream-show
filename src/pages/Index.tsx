@@ -1,7 +1,6 @@
 import Header from "@/components/Header";
 import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
-import SubscribeBanner from "@/components/SubscribeBanner";
 import WeatherWidget from "@/components/WeatherWidget";
 import VenueMap from "@/components/VenueMap";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
@@ -26,9 +25,6 @@ const Index = () => {
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
         {/* Live Stream — hero, full width */}
         <YouTubeEmbed url={activeUrl} />
-
-        {/* Subscribe banner — full width, between video and scoreboard */}
-        <SubscribeBanner />
 
         {/* Schedule | Right column */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
