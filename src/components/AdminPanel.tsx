@@ -2,13 +2,13 @@ import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, Check, AlertCircle } from "lucide-react";
+import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin } from "lucide-react";
 
 export interface AdminSettings {
   streamUrl:    string;
   channelId:    string;
   venueName:    string;
-  venueAddress: string; // stores the raw "lat, lon" string the user pastes
+  venueAddress: string;
   venueLat:     string;
   venueLon:     string;
 }
@@ -18,38 +18,47 @@ interface AdminPanelProps {
   onSave: (settings: AdminSettings) => Promise<void>;
 }
 
-/** Parse "lat, lon" or "lat lon" → { lat, lon } or null if invalid. */
-function parseCoords(raw: string): { lat: number; lon: number } | null {
-  const parts = raw.trim().split(/[\s,]+/);
-  if (parts.length !== 2) return null;
-  const lat = parseFloat(parts[0]);
-  const lon = parseFloat(parts[1]);
-  if (isNaN(lat) || isNaN(lon)) return null;
-  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
-  return { lat, lon };
+/** Geocode an address string via Nominatim → { lat, lon } or null */
+async function geocodeAddress(address: string): Promise<{ lat: number; lon: number; display: string } | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
+      { headers: { "User-Agent": "LovableApp/1.0" } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return null;
+    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display: data[0].display_name };
+  } catch {
+    return null;
+  }
 }
 
 const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   const [draft, setDraft]   = useState<AdminSettings>(settings);
   const [saved, setSaved]   = useState(false);
-  const [coordErr, setCoordErr] = useState(false);
+  const [addrErr, setAddrErr] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [resolvedAddr, setResolvedAddr] = useState<string | null>(null);
 
   const set = (field: keyof AdminSettings) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setDraft((prev) => ({ ...prev, [field]: e.target.value }));
-      if (field === "venueAddress") setCoordErr(false);
+      if (field === "venueAddress") { setAddrErr(false); setResolvedAddr(null); }
     };
 
+  const handleLookup = async () => {
+    if (!draft.venueAddress.trim()) return;
+    setGeocoding(true);
+    setAddrErr(false);
+    const result = await geocodeAddress(draft.venueAddress);
+    setGeocoding(false);
+    if (!result) { setAddrErr(true); return; }
+    setDraft((prev) => ({ ...prev, venueLat: String(result.lat), venueLon: String(result.lon) }));
+    setResolvedAddr(result.display);
+  };
+
   const handleSave = async () => {
-    let toSave = { ...draft };
-
-    if (draft.venueAddress.trim()) {
-      const parsed = parseCoords(draft.venueAddress);
-      if (!parsed) { setCoordErr(true); return; }
-      toSave = { ...toSave, venueLat: String(parsed.lat), venueLon: String(parsed.lon) };
-    }
-
-    await onSave(toSave);
+    await onSave(draft);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -112,21 +121,41 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               placeholder="Newmarket Baseball Stadium"
             />
             <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              Coordinates
+              Address
             </label>
-            <Input
-              value={draft.venueAddress}
-              onChange={set("venueAddress")}
-              placeholder="44.0529, -79.4611"
-              className={coordErr ? "border-destructive" : ""}
-            />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Paste latitude and longitude from Google Maps (right-click a location → copy coordinates).
-            </p>
-            {coordErr && (
+            <div className="flex gap-2">
+              <Input
+                value={draft.venueAddress}
+                onChange={set("venueAddress")}
+                placeholder="123 Main St, Toronto, ON"
+                className={addrErr ? "border-destructive flex-1" : "flex-1"}
+                onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleLookup}
+                disabled={geocoding || !draft.venueAddress.trim()}
+                className="gap-1.5 shrink-0"
+              >
+                {geocoding ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                Lookup
+              </Button>
+            </div>
+            {resolvedAddr && (
+              <p className="mt-1.5 text-xs text-primary">
+                ✓ {resolvedAddr}
+              </p>
+            )}
+            {draft.venueLat && draft.venueLon && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Coordinates: {draft.venueLat}, {draft.venueLon}
+              </p>
+            )}
+            {addrErr && (
               <div className="mt-1.5 flex items-center gap-1.5 text-xs text-destructive">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                Enter valid coordinates, e.g. 44.0529, -79.4611
+                Could not find that address. Try a more specific query.
               </div>
             )}
           </section>
