@@ -25,7 +25,7 @@ const Index = () => {
   useGCSync(score.enabled);
 
   // Auto-detect the live stream from the YouTube channel when no manual URL is set
-  const autoVideoId  = useYouTubeLive(streamUrl ? null : venue.channelId);
+  const autoVideoId  = useYouTubeLive(streamUrl ? null : venue.channelId, venue.youtubeApiKey);
   const autoUrl      = autoVideoId ? `https://www.youtube.com/watch?v=${autoVideoId}` : "";
 
   const activeUrl    = streamUrl || autoUrl;
