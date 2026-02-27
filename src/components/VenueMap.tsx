@@ -21,7 +21,7 @@ const VenueMap = ({ lat, lon, venueName }: VenueMapProps) => {
       <iframe
         src={embedUrl}
         title={`Map of ${venueName}`}
-        className="w-full h-44 border-0"
+        className="w-full h-40 sm:h-44 border-0"
         loading="lazy"
         referrerPolicy="no-referrer"
       />

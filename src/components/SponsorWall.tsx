@@ -36,10 +36,10 @@ const SponsorWall = () => {
       <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
         Stream brought to you by
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-8">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8">
         {SPONSORS.map((s) => (
           <div key={s.name} className={s.boxed ? "rounded border border-border px-3 py-2 bg-gray-700" : undefined}>
-            <img src={s.logo} alt={s.name} className="h-12 w-auto max-w-[160px] object-contain" />
+            <img src={s.logo} alt={s.name} className="h-9 sm:h-12 w-auto max-w-[120px] sm:max-w-[160px] object-contain" />
           </div>
         ))}
       </div>
