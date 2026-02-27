@@ -28,6 +28,7 @@ async function fetchLiveVideoId(channelId: string): Promise<string | null> {
 }
 
 export function useYouTubeLive(channelId: string | null) {
+  console.debug("[useYouTubeLive] state", { channelId, hasApiKey: !!API_KEY, enabled: !!channelId && !!API_KEY });
   const { data: videoId = null } = useQuery({
     queryKey: ["yt-live", channelId],
     queryFn: () => fetchLiveVideoId(channelId!),
