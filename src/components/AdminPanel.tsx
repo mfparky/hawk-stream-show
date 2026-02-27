@@ -2,15 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin } from "lucide-react";
+import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin, Minus, Plus } from "lucide-react";
 
 export interface AdminSettings {
-  streamUrl:    string;
-  channelId:    string;
-  venueName:    string;
-  venueAddress: string;
-  venueLat:     string;
-  venueLon:     string;
+  streamUrl:      string;
+  channelId:      string;
+  venueName:      string;
+  venueAddress:   string;
+  venueLat:       string;
+  venueLon:       string;
+  scoreEnabled:   string;
+  scoreHomeTeam:  string;
+  scoreAwayTeam:  string;
+  scoreHomeScore: string;
+  scoreAwayScore: string;
+  scoreStatus:    string;
 }
 
 interface AdminPanelProps {
@@ -110,6 +116,20 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
     await onSave(draft);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const adjustScore = async (field: "scoreHomeScore" | "scoreAwayScore", delta: number) => {
+    const current = parseInt(draft[field] || "0", 10) || 0;
+    const next = Math.max(0, current + delta);
+    const nextDraft = { ...draft, [field]: String(next) };
+    setDraft(nextDraft);
+    await onSave(nextDraft);
+  };
+
+  const toggleScoreEnabled = async (enabled: boolean) => {
+    const nextDraft = { ...draft, scoreEnabled: enabled ? "true" : "false" };
+    setDraft(nextDraft);
+    await onSave(nextDraft);
   };
 
   return (
@@ -221,6 +241,108 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
                 No results found. Try a different search.
               </div>
             )}
+          </section>
+
+          {/* ── Live Score ── */}
+          <section>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Live Score
+            </p>
+
+            <label className="flex items-center gap-2 cursor-pointer mb-4">
+              <input
+                type="checkbox"
+                checked={draft.scoreEnabled === "true"}
+                onChange={(e) => toggleScoreEnabled(e.target.checked)}
+                className="h-4 w-4 rounded accent-primary border-border"
+              />
+              <span className="text-sm font-medium text-muted-foreground">
+                Show scoreboard above stream
+              </span>
+            </label>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+                  Home Team
+                </label>
+                <Input
+                  value={draft.scoreHomeTeam}
+                  onChange={set("scoreHomeTeam")}
+                  placeholder="Hawks"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+                  Away Team
+                </label>
+                <Input
+                  value={draft.scoreAwayTeam}
+                  onChange={set("scoreAwayTeam")}
+                  placeholder="Opponent"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+                  Home Score
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("scoreHomeScore", -1)}
+                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="flex-1 text-center text-lg font-bold tabular-nums">
+                    {draft.scoreHomeScore || "0"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("scoreHomeScore", 1)}
+                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+                  Away Score
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("scoreAwayScore", -1)}
+                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="flex-1 text-center text-lg font-bold tabular-nums">
+                    {draft.scoreAwayScore || "0"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("scoreAwayScore", 1)}
+                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              Period / Status
+            </label>
+            <Input
+              value={draft.scoreStatus}
+              onChange={set("scoreStatus")}
+              placeholder="e.g. Q3, Halftime, Final, 5th Inning"
+            />
           </section>
 
           <Button onClick={handleSave} className="gap-1.5">
