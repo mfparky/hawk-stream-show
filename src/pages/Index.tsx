@@ -7,10 +7,17 @@ import ScoreboardWidget from "@/components/ScoreboardWidget";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useYouTubeLive } from "@/hooks/useYouTubeLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
+import { useScoreSettings } from "@/hooks/useScoreSettings";
+import { useGCSync } from "@/hooks/useGCSync";
 
 const Index = () => {
   const streamUrl    = useStreamUrl();
   const venue        = useVenueSettings();
+  const score        = useScoreSettings();
+
+  // Auto-sync scores from the GameChanger widget DOM when the scoreboard is enabled.
+  // Falls back silently if the widget HTML doesn't match any known pattern.
+  useGCSync(score.enabled);
 
   // Auto-detect the live stream from the YouTube channel when no manual URL is set
   const autoVideoId  = useYouTubeLive(streamUrl ? null : (venue.channelId || "UCEjeKZZC1HKPVfxQHlS6cqQ"));
