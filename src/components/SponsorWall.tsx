@@ -21,11 +21,11 @@ interface Sponsor {
 }
 
 const SPONSORS: Sponsor[] = [
-  { name: "AVP",          logo: "/sponsors/AVP-Logo_Black.png",     url: "https://streamthehawks.ca" },
-  { name: "BYP",          logo: "/sponsors/BYPVector.png",          url: "https://streamthehawks.ca" },
-  { name: "HVAC Trust",   logo: "/sponsors/HVAC%20TRUST.png",       url: "https://streamthehawks.ca" },
-  { name: "Reliance",     logo: "/sponsors/Reliance%20logo%20KO.png", url: "https://streamthehawks.ca", boxed: true },
-  { name: "Tremcar",      logo: "/sponsors/Tremcar%20LOGO.png",     url: "https://streamthehawks.ca" },
+  { name: "AVP", logo: "/sponsors/AVP-Logo_Black.png", url: "https://streamthehawks.ca" },
+  { name: "BYP", logo: "/sponsors/BYPVector.png", url: "https://streamthehawks.ca" },
+  { name: "HVAC Trust", logo: "/sponsors/HVACTRUST.png", url: "https://streamthehawks.ca" },
+  { name: "Reliance", logo: "/sponsors/ReliancelogoKO.png", url: "https://streamthehawks.ca", boxed: true },
+  { name: "Tremcar", logo: "/sponsors/TremcarLOGO.png", url: "https://streamthehawks.ca" },
 ];
 
 const SponsorWall = () => {
@@ -38,15 +38,8 @@ const SponsorWall = () => {
       </p>
       <div className="flex flex-wrap items-center justify-center gap-8">
         {SPONSORS.map((s) => (
-          <div
-            key={s.name}
-            className={s.boxed ? "rounded border border-border px-3 py-2 bg-gray-700" : undefined}
-          >
-            <img
-              src={s.logo}
-              alt={s.name}
-              className="h-12 w-auto max-w-[160px] object-contain"
-            />
+          <div key={s.name} className={s.boxed ? "rounded border border-border px-3 py-2 bg-gray-700" : undefined}>
+            <img src={s.logo} alt={s.name} className="h-12 w-auto max-w-[160px] object-contain" />
           </div>
         ))}
       </div>
