@@ -49,7 +49,7 @@ async function fetchWeather(lat: number, lon: number): Promise<OpenMeteoResponse
     `https://api.open-meteo.com/v1/forecast` +
     `?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,weathercode,windspeed_10m` +
-    `&temperature_unit=celsius&wind_speed_unit=kmh&timezone=auto`;
+    `&temperature_unit=celsius&wind_speed_unit=kmh&timezone=America%2FToronto`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Weather fetch failed");
   return res.json();
