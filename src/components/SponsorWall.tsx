@@ -23,9 +23,9 @@ interface Sponsor {
 const SPONSORS: Sponsor[] = [
   { name: "AVP",          logo: "/sponsors/AVP-Logo_Black.png",     url: "https://streamthehawks.ca" },
   { name: "BYP",          logo: "/sponsors/BYPVector.png",          url: "https://streamthehawks.ca" },
-  { name: "HVAC Trust",   logo: "/sponsors/HVAC TRUST.png",         url: "https://streamthehawks.ca" },
-  { name: "Reliance",     logo: "/sponsors/Reliance logo KO.png",   url: "https://streamthehawks.ca", boxed: true },
-  { name: "Tremcar",      logo: "/sponsors/Tremcar LOGO.png",       url: "https://streamthehawks.ca" },
+  { name: "HVAC Trust",   logo: "/sponsors/HVAC%20TRUST.png",       url: "https://streamthehawks.ca" },
+  { name: "Reliance",     logo: "/sponsors/Reliance%20logo%20KO.png", url: "https://streamthehawks.ca", boxed: true },
+  { name: "Tremcar",      logo: "/sponsors/Tremcar%20LOGO.png",     url: "https://streamthehawks.ca" },
 ];
 
 const SponsorWall = () => {
