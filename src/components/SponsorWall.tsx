@@ -32,7 +32,7 @@ const SponsorWall = () => {
   if (SPONSORS.length === 0) return null;
 
   return (
-    <div className="border-t border-border pt-6 pb-2 bg-white rounded-b-lg">
+    <div className="border-t border-border pt-6 pb-2 bg-white rounded-lg">
       <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
         Stream brought to you by
       </p>
