@@ -19,6 +19,11 @@ import {
 } from "@/lib/constants";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+const PASSPHRASE = "hawks fly high swing hard";
+const SESSION_KEY = "admin_unlocked";
 
 const KEYS = [
   STREAM_URL_KEY, CHANNEL_ID_KEY, YOUTUBE_API_KEY_KEY,
@@ -28,6 +33,20 @@ const KEYS = [
 ];
 
 const Admin = () => {
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
+  const [phrase, setPhrase]     = useState("");
+  const [failed, setFailed]     = useState(false);
+
+  const attempt = () => {
+    if (phrase.trim().toLowerCase() === PASSPHRASE) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      setUnlocked(true);
+    } else {
+      setFailed(true);
+      setPhrase("");
+    }
+  };
+
   const [settings, setSettings] = useState<AdminSettings>({
     streamUrl:      "",
     channelId:      "",
@@ -45,6 +64,7 @@ const Admin = () => {
   });
 
   useEffect(() => {
+    if (!unlocked) return;
     supabase
       .from("settings")
       .select("key, value")
@@ -57,18 +77,18 @@ const Admin = () => {
           channelId:      map[CHANNEL_ID_KEY]       ?? "",
           youtubeApiKey:  map[YOUTUBE_API_KEY_KEY]  ?? "",
           venueName:      map[VENUE_NAME_KEY]       ?? "",
-          venueAddress:   map[VENUE_ADDRESS_KEY]   ?? "",
-          venueLat:       map[VENUE_LAT_KEY]       ?? "",
-          venueLon:       map[VENUE_LON_KEY]       ?? "",
-          scoreEnabled:   map[SCORE_ENABLED_KEY]   ?? "",
-          scoreHomeTeam:  map[SCORE_HOME_TEAM_KEY] ?? "",
-          scoreAwayTeam:  map[SCORE_AWAY_TEAM_KEY] ?? "",
-          scoreHomeScore: map[SCORE_HOME_SCORE_KEY]?? "",
-          scoreAwayScore: map[SCORE_AWAY_SCORE_KEY]?? "",
-          scoreStatus:    map[SCORE_STATUS_KEY]    ?? "",
+          venueAddress:   map[VENUE_ADDRESS_KEY]    ?? "",
+          venueLat:       map[VENUE_LAT_KEY]        ?? "",
+          venueLon:       map[VENUE_LON_KEY]        ?? "",
+          scoreEnabled:   map[SCORE_ENABLED_KEY]    ?? "",
+          scoreHomeTeam:  map[SCORE_HOME_TEAM_KEY]  ?? "",
+          scoreAwayTeam:  map[SCORE_AWAY_TEAM_KEY]  ?? "",
+          scoreHomeScore: map[SCORE_HOME_SCORE_KEY] ?? "",
+          scoreAwayScore: map[SCORE_AWAY_SCORE_KEY] ?? "",
+          scoreStatus:    map[SCORE_STATUS_KEY]     ?? "",
         });
       });
-  }, []);
+  }, [unlocked]);
 
   const handleSave = async (next: AdminSettings) => {
     setSettings(next);
@@ -90,6 +110,35 @@ const Admin = () => {
 
     await supabase.from("settings").upsert(rows);
   };
+
+  if (!unlocked) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header subtitle="Admin Panel" />
+        <main className="mx-auto max-w-sm px-4 py-20 flex flex-col items-center gap-6">
+          <div className="text-center space-y-1">
+            <p className="text-lg font-semibold">Admin access</p>
+            <p className="text-sm text-muted-foreground">Enter the passphrase to continue</p>
+          </div>
+          <div className="w-full space-y-3">
+            <Input
+              type="password"
+              value={phrase}
+              onChange={(e) => { setPhrase(e.target.value); setFailed(false); }}
+              onKeyDown={(e) => e.key === "Enter" && attempt()}
+              placeholder="passphrase…"
+              className={failed ? "border-destructive" : ""}
+              autoFocus
+            />
+            {failed && (
+              <p className="text-xs text-destructive text-center">Incorrect passphrase — try again</p>
+            )}
+            <Button className="w-full" onClick={attempt}>Unlock</Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
