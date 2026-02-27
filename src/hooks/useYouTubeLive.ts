@@ -16,9 +16,15 @@ async function fetchLiveVideoId(channelId: string): Promise<string | null> {
     `&eventType=live&type=video&part=id&maxResults=1` +
     `&key=${API_KEY}`;
   const res = await fetch(url);
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[useYouTubeLive] API error", res.status, body);
+    return null;
+  }
   const json = await res.json();
-  return json?.items?.[0]?.id?.videoId ?? null;
+  const videoId = json?.items?.[0]?.id?.videoId ?? null;
+  if (!videoId) console.info("[useYouTubeLive] No live stream found for channel", channelId);
+  return videoId;
 }
 
 export function useYouTubeLive(channelId: string | null) {
