@@ -97,7 +97,7 @@ const WeatherWidget = ({ lat, lon, venueName }: WeatherWidgetProps) => {
         Weather at {venueName}
       </p>
       <div className="flex items-center gap-3">
-        <span className="text-4xl leading-none" role="img" aria-label={label}>
+        <span className="text-2xl sm:text-4xl leading-none" role="img" aria-label={label}>
           {icon}
         </span>
         <div>

@@ -91,7 +91,7 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       <Header subtitle="Admin Panel" />
 
-      <main className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+      <main className="mx-auto max-w-2xl px-4 py-4 sm:py-8 space-y-6">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"

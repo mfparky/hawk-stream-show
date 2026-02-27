@@ -149,7 +149,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="mt-2 rounded-lg border border-border bg-card p-5 space-y-5">
+        <div className="mt-2 rounded-lg border border-border bg-card p-3 sm:p-5 space-y-3 sm:space-y-5">
 
           {/* ── Stream ── */}
           <section>
@@ -267,7 +267,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               </span>
             </label>
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
                   Home Team
@@ -290,7 +290,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
                   Home Score
@@ -299,7 +299,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
                   <button
                     type="button"
                     onClick={() => adjustScore("scoreHomeScore", -1)}
-                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
@@ -309,7 +309,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
                   <button
                     type="button"
                     onClick={() => adjustScore("scoreHomeScore", 1)}
-                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
@@ -323,7 +323,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
                   <button
                     type="button"
                     onClick={() => adjustScore("scoreAwayScore", -1)}
-                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
@@ -333,7 +333,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
                   <button
                     type="button"
                     onClick={() => adjustScore("scoreAwayScore", 1)}
-                    className="h-9 w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
