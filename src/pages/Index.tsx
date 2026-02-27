@@ -38,6 +38,9 @@ const Index = () => {
         {/* Live Stream — hero, full width */}
         <YouTubeEmbed url={activeUrl} />
 
+        {/* Sponsor wall — right after embed when no stream */}
+        {!activeUrl && <SponsorWall />}
+
         {/* Schedule | Right column */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Schedule — 2/3 (second on mobile, first on desktop) */}
@@ -67,8 +70,8 @@ const Index = () => {
           )}
         </div>
 
-        {/* Sponsor logo wall */}
-        <SponsorWall />
+        {/* Sponsor logo wall — at bottom when stream is active */}
+        {!!activeUrl && <SponsorWall />}
       </main>
     </div>
   );
