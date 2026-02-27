@@ -22,8 +22,22 @@ function describeCode(code: number): { label: string; icon: string } {
   return                              { label: "Unknown",          icon: "🌡️" };
 }
 
+// Format "2026-02-27T14:00" (Open-Meteo local time) → "2:00 PM"
+function formatLocalTime(timeStr: string): string {
+  const timePart = timeStr.split("T")[1] ?? "";
+  const [hStr, mStr] = timePart.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(m)) return "";
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
 interface OpenMeteoResponse {
+  timezone_abbreviation: string;
   current: {
+    time: string;
     temperature_2m: number;
     weathercode: number;
     windspeed_10m: number;
@@ -71,10 +85,11 @@ const WeatherWidget = ({ lat, lon, venueName }: WeatherWidgetProps) => {
     );
   }
 
-  const { temperature_2m, weathercode, windspeed_10m } = data.current;
+  const { temperature_2m, weathercode, windspeed_10m, time } = data.current;
   const { label, icon } = describeCode(weathercode);
-  const tempF = Math.round(temperature_2m * 9 / 5 + 32);
   const tempC = Math.round(temperature_2m);
+  const localTime = formatLocalTime(time);
+  const tzAbbr = data.timezone_abbreviation;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -87,14 +102,16 @@ const WeatherWidget = ({ lat, lon, venueName }: WeatherWidgetProps) => {
         </span>
         <div>
           <p className="text-2xl font-bold text-foreground leading-none">
-            {tempF}°F
-            <span className="ml-1.5 text-base font-normal text-muted-foreground">
-              / {tempC}°C
-            </span>
+            {tempC}°C
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
             {label} · Wind {Math.round(windspeed_10m)} km/h
           </p>
+          {localTime && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {localTime}{tzAbbr ? ` ${tzAbbr}` : ""}
+            </p>
+          )}
         </div>
       </div>
     </div>

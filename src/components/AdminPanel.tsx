@@ -52,6 +52,12 @@ async function searchAddress(query: string): Promise<GeoResult[]> {
 const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   const [draft, setDraft]   = useState<AdminSettings>(settings);
   const [saved, setSaved]   = useState(false);
+
+  // Sync draft when settings load from Supabase (the initial state is empty
+  // while the async fetch is in flight, so draft needs to catch up once data arrives).
+  useEffect(() => {
+    setDraft(settings);
+  }, [settings]);
   const [addrErr, setAddrErr] = useState(false);
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<GeoResult[]>([]);
