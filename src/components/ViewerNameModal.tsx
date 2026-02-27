@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 interface Props {
   open: boolean;
   loading: boolean;
-  onSubmit: (firstName: string, lastName: string) => void;
+  onSubmit: (firstName: string, lastName: string) => Promise<void> | void;
 }
 
 const ViewerNameModal = ({ open, loading, onSubmit }: Props) => {
