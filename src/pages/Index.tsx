@@ -4,6 +4,7 @@ import YouTubeEmbed from "@/components/YouTubeEmbed";
 import WeatherWidget from "@/components/WeatherWidget";
 import VenueMap from "@/components/VenueMap";
 import ScoreboardWidget from "@/components/ScoreboardWidget";
+import SponsorWall from "@/components/SponsorWall";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useYouTubeLive } from "@/hooks/useYouTubeLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
@@ -65,6 +66,9 @@ const Index = () => {
             </div>
           )}
         </div>
+
+        {/* Sponsor logo wall */}
+        <SponsorWall />
       </main>
     </div>
   );
