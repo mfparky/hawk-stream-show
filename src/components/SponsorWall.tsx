@@ -19,9 +19,11 @@ interface Sponsor {
 }
 
 const SPONSORS: Sponsor[] = [
-  // ── Add your sponsors here ───────────────────────────────────────────────
-  // { name: "Sponsor Name", logo: "/sponsors/filename.png", url: "https://..." },
-  // ────────────────────────────────────────────────────────────────────────
+  { name: "AVP",          logo: "/sponsors/AVP-Logo_Black.png",     url: "https://streamthehawks.ca" },
+  { name: "BYP",          logo: "/sponsors/BYPVector.png",          url: "https://streamthehawks.ca" },
+  { name: "HVAC Trust",   logo: "/sponsors/HVAC TRUST.png",         url: "https://streamthehawks.ca" },
+  { name: "Reliance",     logo: "/sponsors/Reliance logo KO.png",   url: "https://streamthehawks.ca" },
+  { name: "Tremcar",      logo: "/sponsors/Tremcar LOGO.png",       url: "https://streamthehawks.ca" },
 ];
 
 const SponsorWall = () => {
@@ -34,19 +36,13 @@ const SponsorWall = () => {
       </p>
       <div className="flex flex-wrap items-center justify-center gap-8">
         {SPONSORS.map((s) => (
-          <a
-            key={s.name}
-            href={s.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={s.name}
-          >
+          <div key={s.name}>
             <img
               src={s.logo}
               alt={s.name}
               className="h-12 w-auto max-w-[160px] object-contain"
             />
-          </a>
+          </div>
         ))}
       </div>
     </div>
