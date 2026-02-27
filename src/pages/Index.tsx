@@ -5,16 +5,20 @@ import WeatherWidget from "@/components/WeatherWidget";
 import VenueMap from "@/components/VenueMap";
 import ScoreboardWidget from "@/components/ScoreboardWidget";
 import SponsorWall from "@/components/SponsorWall";
+import ViewerNameModal from "@/components/ViewerNameModal";
+import WelcomeBanner from "@/components/WelcomeBanner";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useYouTubeLive } from "@/hooks/useYouTubeLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
 import { useGCSync } from "@/hooks/useGCSync";
+import { useViewer } from "@/hooks/useViewer";
 
 const Index = () => {
   const streamUrl    = useStreamUrl();
   const venue        = useVenueSettings();
   const score        = useScoreSettings();
+  const { viewer, register, loading: viewerLoading, needsPrompt } = useViewer();
 
   // Auto-sync scores from the GameChanger widget DOM when the scoreboard is enabled.
   // Falls back silently if the widget HTML doesn't match any known pattern.
@@ -29,9 +33,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <ViewerNameModal open={needsPrompt} loading={viewerLoading} onSubmit={register} />
       <Header />
 
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
+        {/* Welcome banner */}
+        {viewer && <WelcomeBanner firstName={viewer.firstName} />}
         {/* Scoreboard — shown above video when enabled by admin */}
         <ScoreboardWidget />
 
