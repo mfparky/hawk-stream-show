@@ -7,6 +7,7 @@ import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin, Minus, Plus
 export interface AdminSettings {
   streamUrl:      string;
   channelId:      string;
+  youtubeApiKey:  string;
   venueName:      string;
   venueAddress:   string;
   venueLat:       string;
@@ -167,18 +168,25 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
             />
             <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
               YouTube Channel ID
-              <span className="ml-1.5 font-normal text-xs">
-                (for auto-detection — requires VITE_YOUTUBE_API_KEY env var)
-              </span>
+              <span className="ml-1.5 font-normal text-xs">(for auto-detection)</span>
             </label>
             <Input
               value={draft.channelId}
               onChange={set("channelId")}
               placeholder="UCxxxxxxxxxxxxxxxxxxxxxxxx"
             />
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              YouTube Data API Key
+              <span className="ml-1.5 font-normal text-xs">(required for auto-detection)</span>
+            </label>
+            <Input
+              value={draft.youtubeApiKey}
+              onChange={set("youtubeApiKey")}
+              placeholder="AIza..."
+            />
             <p className="mt-1.5 text-xs text-muted-foreground">
-              When a Channel ID is set and the API key is present, the stream URL is detected
-              automatically every 60 s. A manual URL above takes priority.
+              When Channel ID and API Key are set, the live stream is detected automatically
+              every 60 s. A manual URL above takes priority.
             </p>
           </section>
 

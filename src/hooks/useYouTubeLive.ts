@@ -1,20 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
-const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY as string | undefined;
-
 /**
  * Polls the YouTube Data API v3 every 60 s to find the active live stream
  * for a given channel.  Returns the videoId string when live, null otherwise.
  *
- * Requires VITE_YOUTUBE_API_KEY to be set; returns null silently when it isn't.
+ * Both channelId and apiKey are loaded from Supabase settings at runtime.
  */
-async function fetchLiveVideoId(channelId: string): Promise<string | null> {
-  if (!API_KEY || !channelId) return null;
+async function fetchLiveVideoId(channelId: string, apiKey: string): Promise<string | null> {
   const url =
     `https://www.googleapis.com/youtube/v3/search` +
     `?channelId=${encodeURIComponent(channelId)}` +
     `&eventType=live&type=video&part=id&maxResults=1` +
-    `&key=${API_KEY}`;
+    `&key=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -27,12 +24,12 @@ async function fetchLiveVideoId(channelId: string): Promise<string | null> {
   return videoId;
 }
 
-export function useYouTubeLive(channelId: string | null) {
-  console.debug("[useYouTubeLive] state", { channelId, hasApiKey: !!API_KEY, enabled: !!channelId && !!API_KEY });
+export function useYouTubeLive(channelId: string | null, apiKey: string | null) {
+  const enabled = !!channelId && !!apiKey;
   const { data: videoId = null } = useQuery({
     queryKey: ["yt-live", channelId],
-    queryFn: () => fetchLiveVideoId(channelId!),
-    enabled: !!channelId && !!API_KEY,
+    queryFn: () => fetchLiveVideoId(channelId!, apiKey!),
+    enabled,
     refetchInterval: 60_000,
     staleTime: 55_000,
   });
