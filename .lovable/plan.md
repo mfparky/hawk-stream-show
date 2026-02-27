@@ -1,32 +1,37 @@
 
+## Conditional Layout: Sponsor Wall Position and Stream Height
 
-## Newmarket Hawks Scoreboard App
+### What changes
 
-### Page Layout
-A single-page app themed in Newmarket Hawks colors (black, gold/yellow, and white) with a bold, sporty feel.
+**1. YouTubeEmbed -- half-height when no stream**
+- The "no stream available" placeholder currently uses `aspect-video` (16:9). Change it to `aspect-[32/9]` (half the height) so it takes up less space when idle.
 
-### Features
+**2. Move SponsorWall based on stream availability**
+- In `Index.tsx`, the `activeUrl` already tells us whether a stream is available (non-empty string = stream, empty = no stream).
+- When there is **no stream**: render `<SponsorWall />` directly after `<YouTubeEmbed />`, before the schedule/weather grid.
+- When there **is a stream**: keep `<SponsorWall />` at the bottom (current position).
 
-1. **Hawks Header**
-   - Team name "Newmarket Hawks" with baseball-themed styling
-   - Hawks color scheme throughout (black/gold)
+### Files to edit
 
-2. **GameChanger Schedule Widget**
-   - Embed the GameChanger schedule/scoreboard widget you provided
-   - Displayed prominently at the top of the page
+**`src/components/YouTubeEmbed.tsx`**
+- Line 56: change `aspect-video` to `aspect-[32/9]` in the no-video-id placeholder div.
 
-3. **YouTube Live Stream Embed**
-   - A responsive YouTube video player below the scoreboard
-   - Displays whatever stream URL is currently set
+**`src/pages/Index.tsx`**
+- Render `<SponsorWall />` in two conditional spots:
+  - Right after `<YouTubeEmbed />` when `!activeUrl` (no stream).
+  - At the bottom of the page when `activeUrl` is truthy (stream active).
 
-4. **Admin Panel (inline, no auth)**
-   - A simple collapsible "Admin" section at the bottom of the page
-   - Text input to paste/update the YouTube live stream URL
-   - Saves to browser localStorage so it persists across refreshes
-   - Instant update — changing the URL immediately updates the embedded player
+### Technical details
 
-### Design
-- Dark background with gold accents matching Hawks branding
-- Clean, mobile-friendly layout so parents can check scores and watch the stream from their phones
-- Card-based sections for the scoreboard widget and the stream
+```text
+Index.tsx layout:
 
+  No stream:                    With stream:
+  +-----------------------+     +-----------------------+
+  | Header                |     | Header                |
+  | Scoreboard            |     | Scoreboard            |
+  | YouTubeEmbed (half h) |     | YouTubeEmbed (full h) |
+  | SponsorWall           |     | Schedule | Weather    |
+  | Schedule | Weather    |     | SponsorWall           |
+  +-----------------------+     +-----------------------+
+```
