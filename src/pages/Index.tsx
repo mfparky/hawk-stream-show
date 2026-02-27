@@ -3,6 +3,7 @@ import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import WeatherWidget from "@/components/WeatherWidget";
 import VenueMap from "@/components/VenueMap";
+import ScoreboardWidget from "@/components/ScoreboardWidget";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useYouTubeLive } from "@/hooks/useYouTubeLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
@@ -23,13 +24,16 @@ const Index = () => {
       <Header />
 
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
+        {/* Scoreboard — shown above video when enabled by admin */}
+        <ScoreboardWidget />
+
         {/* Live Stream — hero, full width */}
         <YouTubeEmbed url={activeUrl} />
 
         {/* Schedule | Right column */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Schedule — 2/3 */}
-          <div className="md:col-span-2">
+          {/* Schedule — 2/3 (second on mobile, first on desktop) */}
+          <div className="md:col-span-2 order-last md:order-first">
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Schedule &amp; Scores
@@ -38,9 +42,9 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Right sidebar — 1/3 */}
+          {/* Right sidebar — 1/3 (first on mobile, last on desktop) */}
           {hasVenue && (
-            <div className="md:col-span-1 flex flex-col gap-4">
+            <div className="md:col-span-1 flex flex-col gap-4 order-first md:order-last">
               <WeatherWidget
                 lat={venue.venueLat!}
                 lon={venue.venueLon!}
