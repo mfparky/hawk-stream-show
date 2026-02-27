@@ -16,13 +16,15 @@ interface Sponsor {
   logo: string;
   /** URL opened when the logo is clicked */
   url: string;
+  /** Wrap logo in a bordered box — use for white/knockout logos on white bg */
+  boxed?: boolean;
 }
 
 const SPONSORS: Sponsor[] = [
   { name: "AVP",          logo: "/sponsors/AVP-Logo_Black.png",     url: "https://streamthehawks.ca" },
   { name: "BYP",          logo: "/sponsors/BYPVector.png",          url: "https://streamthehawks.ca" },
   { name: "HVAC Trust",   logo: "/sponsors/HVAC TRUST.png",         url: "https://streamthehawks.ca" },
-  { name: "Reliance",     logo: "/sponsors/Reliance logo KO.png",   url: "https://streamthehawks.ca" },
+  { name: "Reliance",     logo: "/sponsors/Reliance logo KO.png",   url: "https://streamthehawks.ca", boxed: true },
   { name: "Tremcar",      logo: "/sponsors/Tremcar LOGO.png",       url: "https://streamthehawks.ca" },
 ];
 
@@ -30,13 +32,16 @@ const SponsorWall = () => {
   if (SPONSORS.length === 0) return null;
 
   return (
-    <div className="border-t border-border pt-6 pb-2">
+    <div className="border-t border-border pt-6 pb-2 bg-white rounded-b-lg">
       <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
         Stream brought to you by
       </p>
       <div className="flex flex-wrap items-center justify-center gap-8">
         {SPONSORS.map((s) => (
-          <div key={s.name}>
+          <div
+            key={s.name}
+            className={s.boxed ? "rounded border border-border px-3 py-2 bg-gray-700" : undefined}
+          >
             <img
               src={s.logo}
               alt={s.name}
