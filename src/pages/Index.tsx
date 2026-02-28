@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import WeatherWidget from "@/components/WeatherWidget";
-import VenueMap from "@/components/VenueMap";
+
 import ScoreboardWidget from "@/components/ScoreboardWidget";
 import SponsorWall from "@/components/SponsorWall";
 import ViewerNameModal from "@/components/ViewerNameModal";
@@ -64,11 +64,6 @@ const Index = () => {
           {hasVenue && (
             <div className="md:col-span-1 flex flex-col gap-4 order-first md:order-last">
               <WeatherWidget
-                lat={venue.venueLat!}
-                lon={venue.venueLon!}
-                venueName={venue.venueName!}
-              />
-              <VenueMap
                 lat={venue.venueLat!}
                 lon={venue.venueLon!}
                 venueName={venue.venueName!}
