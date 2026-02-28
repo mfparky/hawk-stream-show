@@ -17,7 +17,7 @@ import {
   SCORE_AWAY_SCORE_KEY,
   SCORE_STATUS_KEY,
 } from "@/lib/constants";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ const KEYS = [
 ];
 
 const Admin = () => {
+  const navigate = useNavigate();
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
   const [phrase, setPhrase]     = useState("");
   const [failed, setFailed]     = useState(false);
@@ -109,6 +110,7 @@ const Admin = () => {
     ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
 
     await supabase.from("settings").upsert(rows);
+    navigate("/");
   };
 
   if (!unlocked) {
