@@ -6,6 +6,28 @@ const corsHeaders = {
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.97.0";
 
+async function firecrawlScrape(apiKey: string, url: string): Promise<string> {
+  const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url,
+      formats: ["markdown"],
+      onlyMainContent: true,
+      waitFor: 5000,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    console.error("Firecrawl error:", data);
+    throw new Error("Firecrawl scrape failed");
+  }
+  return data?.data?.markdown ?? data?.markdown ?? "";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -39,55 +61,41 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Ensure we're hitting the roster page
-    const rosterUrl = teamUrl.replace(/\/?$/, "/roster");
-    console.log("Scraping roster from:", rosterUrl);
+    // Step 1: Scrape the team homepage to find the "Team" tab link
+    console.log("Step 1: Scraping team homepage:", teamUrl);
+    const homeMd = await firecrawlScrape(firecrawlKey, teamUrl);
+    console.log("Homepage markdown length:", homeMd.length);
 
-    // Scrape with Firecrawl
-    const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: rosterUrl,
-        formats: ["markdown"],
-        onlyMainContent: true,
-        waitFor: 3000,
-      }),
-    });
+    // Find the "Team" tab link — GC uses URLs like /teams/ID/SEASON-SLUG/team
+    const teamLinkMatch = homeMd.match(/\[Team\]\((https:\/\/web\.gc\.com\/teams\/[^\s)]+\/team)\)/i);
+    let rosterUrl: string;
 
-    const scrapeData = await scrapeRes.json();
-    if (!scrapeRes.ok) {
-      console.error("Firecrawl error:", scrapeData);
-      return new Response(
-        JSON.stringify({ success: false, error: "Firecrawl scrape failed" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (teamLinkMatch) {
+      rosterUrl = teamLinkMatch[1];
+      console.log("Found Team tab URL:", rosterUrl);
+    } else {
+      // Fallback: try appending /team to the URL
+      rosterUrl = teamUrl.replace(/\/?$/, "/team");
+      console.log("No Team tab found, trying fallback:", rosterUrl);
     }
 
-    const markdown = scrapeData?.data?.markdown ?? scrapeData?.markdown ?? "";
-    console.log("Scraped markdown length:", markdown.length);
-    console.log("Scraped markdown preview:", markdown.substring(0, 500));
+    // Step 2: Scrape the team/roster page
+    console.log("Step 2: Scraping roster page:", rosterUrl);
+    const rosterMd = await firecrawlScrape(firecrawlKey, rosterUrl);
+    console.log("Roster markdown length:", rosterMd.length);
+    console.log("Roster markdown:\n", rosterMd.substring(0, 3000));
 
     // Parse roster from markdown
-    // GC roster pages typically list players as lines like:
-    //   #12 John Smith | OF
-    //   12 | John Smith | Outfield
-    // Or in markdown table format:
-    //   | # | Name | Position |
-    //   | 12 | John Smith | OF |
     const players: { jersey_number: string; player_name: string; position: string }[] = [];
-    const lines = markdown.split("\n");
+    const lines = rosterMd.split("\n");
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#") && !trimmed.match(/^#\d/)) continue;
+      if (!trimmed) continue;
 
-      // Pattern: markdown table row  | 12 | John Smith | OF |
+      // Pattern 1: markdown table row  | 12 | John Smith | OF |
       const tableMatch = trimmed.match(
-        /\|\s*#?(\d{1,3})\s*\|\s*([A-Za-z][A-Za-z\s.'-]+?)\s*\|\s*([A-Za-z/\s]+?)\s*\|?/
+        /\|\s*#?(\d{1,3})\s*\|\s*([A-Za-z][A-Za-z\s.'\-]+?)\s*\|\s*([A-Za-z0-9/\s]+?)\s*\|?/
       );
       if (tableMatch) {
         players.push({
@@ -98,9 +106,9 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Pattern: #12 John Smith - OF  or  #12 John Smith | OF
+      // Pattern 2: #12 John Smith  or  #12 John Smith - OF
       const hashMatch = trimmed.match(
-        /^#(\d{1,3})\s+([A-Za-z][A-Za-z\s.'-]+?)(?:\s*[-|]\s*([A-Za-z/\s]+))?$/
+        /^#(\d{1,3})\s+([A-Za-z][A-Za-z\s.'\-]+?)(?:\s*[-–|]\s*([A-Za-z0-9/\s]+))?$/
       );
       if (hashMatch) {
         players.push({
@@ -111,9 +119,9 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Pattern: 12 | John Smith | OF
+      // Pattern 3: "12 | John Smith | OF" or "12 John Smith OF"
       const pipeMatch = trimmed.match(
-        /^(\d{1,3})\s*\|\s*([A-Za-z][A-Za-z\s.'-]+?)\s*\|\s*([A-Za-z/\s]+)/
+        /^(\d{1,3})\s*\|\s*([A-Za-z][A-Za-z\s.'\-]+?)\s*\|\s*([A-Za-z0-9/\s]+)/
       );
       if (pipeMatch) {
         players.push({
@@ -121,18 +129,45 @@ Deno.serve(async (req) => {
           player_name: pipeMatch[2].trim(),
           position: pipeMatch[3].trim(),
         });
+        continue;
+      }
+
+      // Pattern 4: Lines like "12\nJohn Smith\nOF" (stacked format)
+      // We'll handle this below after checking for number-only lines
+    }
+
+    // Pattern 5: Stacked format — jersey number on its own line, followed by name
+    // GC sometimes renders roster as: "12\n\nJohn Smith\n\nOF" or similar
+    if (players.length === 0) {
+      const allLines = lines.map((l) => l.trim()).filter(Boolean);
+      for (let i = 0; i < allLines.length; i++) {
+        const numMatch = allLines[i].match(/^#?(\d{1,3})$/);
+        if (numMatch && i + 1 < allLines.length) {
+          const name = allLines[i + 1];
+          // Name must look like a person's name (at least 2 chars, starts with letter)
+          if (/^[A-Za-z][A-Za-z\s.'\-]{1,}$/.test(name) && !name.match(/^(Staff|Coach|Manager|Home|Schedule|Team|Stats|Follow)/i)) {
+            const pos = (i + 2 < allLines.length && /^[A-Z]{1,3}(\/[A-Z]{1,3})?$/.test(allLines[i + 2]))
+              ? allLines[i + 2]
+              : "";
+            players.push({
+              jersey_number: numMatch[1],
+              player_name: name,
+              position: pos,
+            });
+            i += pos ? 2 : 1;
+          }
+        }
       }
     }
 
-    console.log("Parsed players:", players.length);
+    console.log("Parsed players:", players.length, players.slice(0, 3));
 
     if (players.length === 0) {
-      // Store the raw markdown so we can debug parsing
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Could not parse any players from the page",
-          raw_preview: markdown.substring(0, 2000),
+          error: "Could not parse any players from the page. The page content may require a different parsing strategy.",
+          raw_preview: rosterMd.substring(0, 2000),
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
