@@ -16,7 +16,6 @@ import {
   SCORE_HOME_SCORE_KEY,
   SCORE_AWAY_SCORE_KEY,
   SCORE_STATUS_KEY,
-  GC_TEAM_URL_KEY,
 } from "@/lib/constants";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -31,7 +30,6 @@ const KEYS = [
   VENUE_NAME_KEY, VENUE_ADDRESS_KEY, VENUE_LAT_KEY, VENUE_LON_KEY,
   SCORE_ENABLED_KEY, SCORE_HOME_TEAM_KEY, SCORE_AWAY_TEAM_KEY,
   SCORE_HOME_SCORE_KEY, SCORE_AWAY_SCORE_KEY, SCORE_STATUS_KEY,
-  GC_TEAM_URL_KEY,
 ];
 
 const Admin = () => {
@@ -63,7 +61,6 @@ const Admin = () => {
     scoreHomeScore: "",
     scoreAwayScore: "",
     scoreStatus:    "",
-    gcTeamUrl:      "",
   });
 
   useEffect(() => {
@@ -89,7 +86,6 @@ const Admin = () => {
           scoreHomeScore: map[SCORE_HOME_SCORE_KEY] ?? "",
           scoreAwayScore: map[SCORE_AWAY_SCORE_KEY] ?? "",
           scoreStatus:    map[SCORE_STATUS_KEY]     ?? "",
-          gcTeamUrl:      map[GC_TEAM_URL_KEY]      ?? "",
         });
       });
   }, [unlocked]);
@@ -110,7 +106,6 @@ const Admin = () => {
       { key: SCORE_HOME_SCORE_KEY,value: next.scoreHomeScore },
       { key: SCORE_AWAY_SCORE_KEY,value: next.scoreAwayScore },
       { key: SCORE_STATUS_KEY,    value: next.scoreStatus    },
-      { key: GC_TEAM_URL_KEY,     value: next.gcTeamUrl      },
     ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
 
     await supabase.from("settings").upsert(rows);

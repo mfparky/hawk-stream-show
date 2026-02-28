@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin, Minus, Plus, RefreshCw } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin, Minus, Plus } from "lucide-react";
 
 export interface AdminSettings {
   streamUrl:      string;
@@ -19,7 +18,6 @@ export interface AdminSettings {
   scoreHomeScore: string;
   scoreAwayScore: string;
   scoreStatus:    string;
-  gcTeamUrl:      string;
 }
 
 interface AdminPanelProps {
@@ -361,9 +359,6 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
             />
           </section>
 
-          {/* ── GameChanger Roster ── */}
-          <RosterSection gcTeamUrl={draft.gcTeamUrl} onChange={(v) => setDraft((p) => ({ ...p, gcTeamUrl: v }))} />
-
           <Button onClick={handleSave} className="gap-1.5">
             {saved && <Check className="h-4 w-4" />}
             {saved ? "Saved" : "Save all settings"}
@@ -373,62 +368,5 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
     </Collapsible>
   );
 };
-
-/** Sub-section for GC roster scraping */
-function RosterSection({ gcTeamUrl, onChange }: { gcTeamUrl: string; onChange: (v: string) => void }) {
-  const [scraping, setScraping] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-
-  const scrapeNow = async () => {
-    setScraping(true);
-    setResult(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("scrape-roster");
-      if (error) throw error;
-      if (data?.success) {
-        setResult(`✅ Imported ${data.count} players`);
-      } else {
-        setResult(`⚠️ ${data?.error ?? "Unknown error"}`);
-      }
-    } catch (e: any) {
-      setResult(`❌ ${e.message}`);
-    } finally {
-      setScraping(false);
-    }
-  };
-
-  return (
-    <section>
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        Team Roster (GameChanger)
-      </p>
-      <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-        GameChanger Team Page URL
-      </label>
-      <Input
-        value={gcTeamUrl}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="https://web.gc.com/teams/..."
-      />
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        Paste your team's public GameChanger page URL. Save settings first, then click Sync.
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="mt-2 gap-1.5"
-        onClick={scrapeNow}
-        disabled={scraping || !gcTeamUrl}
-      >
-        <RefreshCw className={`h-3.5 w-3.5 ${scraping ? "animate-spin" : ""}`} />
-        {scraping ? "Syncing…" : "Sync Roster Now"}
-      </Button>
-      {result && (
-        <p className="mt-2 text-xs text-muted-foreground">{result}</p>
-      )}
-    </section>
-  );
-}
 
 export default AdminPanel;

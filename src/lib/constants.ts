@@ -12,5 +12,3 @@ export const SCORE_AWAY_TEAM_KEY  = "score_away_team";
 export const SCORE_HOME_SCORE_KEY = "score_home_score";
 export const SCORE_AWAY_SCORE_KEY = "score_away_score";
 export const SCORE_STATUS_KEY     = "score_status";
-
-export const GC_TEAM_URL_KEY     = "gc_team_url";
