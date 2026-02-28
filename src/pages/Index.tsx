@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import WeatherWidget from "@/components/WeatherWidget";
+import RosterWidget from "@/components/RosterWidget";
 
 import ScoreboardWidget from "@/components/ScoreboardWidget";
 import SponsorWall from "@/components/SponsorWall";
@@ -68,6 +69,7 @@ const Index = () => {
                 lon={venue.venueLon!}
                 venueName={venue.venueName!}
               />
+              <RosterWidget />
             </div>
           )}
         </div>
