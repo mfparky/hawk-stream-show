@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 
 export interface RtmpStats {
   live:         boolean;
@@ -49,8 +50,6 @@ const POLL_INTERVAL  = 5000;
 
 // Route through the Supabase Edge Function so the browser never makes a plain
 // HTTP request (which would be blocked as mixed content from an HTTPS page).
-const SUPABASE_URL      = (import.meta.env.VITE_SUPABASE_URL as string) ?? "";
-const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string) ?? "";
 
 function proxyUrl(statsUrl: string): string {
   return `${SUPABASE_URL}/functions/v1/rtmp-stats?url=${encodeURIComponent(statsUrl)}`;
