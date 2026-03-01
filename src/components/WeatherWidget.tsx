@@ -22,7 +22,7 @@ function describeCode(code: number): { label: string; icon: string } {
   return                              { label: "Unknown",          icon: "🌡️" };
 }
 
-// Format "2026-02-27T14:00" (Open-Meteo local time) → "2:00 PM"
+// Format "2026-02-27T14:00" → "2:00 PM"
 function formatLocalTime(timeStr: string): string {
   const timePart = timeStr.split("T")[1] ?? "";
   const [hStr, mStr] = timePart.split(":");
@@ -34,6 +34,12 @@ function formatLocalTime(timeStr: string): string {
   return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
 }
 
+// Format "2026-02-28" → "Sat"
+function formatDayName(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short" });
+}
+
 interface OpenMeteoResponse {
   timezone_abbreviation: string;
   current: {
@@ -42,6 +48,12 @@ interface OpenMeteoResponse {
     weathercode: number;
     windspeed_10m: number;
   };
+  daily: {
+    time: string[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    weathercode: number[];
+  };
 }
 
 async function fetchWeather(lat: number, lon: number): Promise<OpenMeteoResponse> {
@@ -49,6 +61,8 @@ async function fetchWeather(lat: number, lon: number): Promise<OpenMeteoResponse
     `https://api.open-meteo.com/v1/forecast` +
     `?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,weathercode,windspeed_10m` +
+    `&daily=temperature_2m_max,temperature_2m_min,weathercode` +
+    `&forecast_days=3` +
     `&temperature_unit=celsius&wind_speed_unit=kmh&timezone=America%2FToronto`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Weather fetch failed");
@@ -59,7 +73,7 @@ const WeatherWidget = ({ lat, lon, venueName }: WeatherWidgetProps) => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["weather", lat, lon],
     queryFn: () => fetchWeather(lat, lon),
-    refetchInterval: 10 * 60_000, // refresh every 10 min
+    refetchInterval: 10 * 60_000,
     staleTime:        8 * 60_000,
   });
 
@@ -96,8 +110,10 @@ const WeatherWidget = ({ lat, lon, venueName }: WeatherWidgetProps) => {
       <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
         Weather at {venueName}
       </p>
+
+      {/* Current conditions */}
       <div className="flex items-center gap-3">
-        <span className="text-2xl sm:text-4xl leading-none" role="img" aria-label={label}>
+        <span className="text-3xl sm:text-4xl leading-none" role="img" aria-label={label}>
           {icon}
         </span>
         <div>
@@ -107,13 +123,35 @@ const WeatherWidget = ({ lat, lon, venueName }: WeatherWidgetProps) => {
           <p className="text-sm text-muted-foreground mt-0.5">
             {label} · Wind {Math.round(windspeed_10m)} km/h
           </p>
-          {localTime && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {localTime}{tzAbbr ? ` ${tzAbbr}` : ""}
-            </p>
-          )}
         </div>
       </div>
+
+      {/* Local time — larger */}
+      {localTime && (
+        <p className="text-base font-semibold text-foreground mt-2">
+          {localTime}{tzAbbr ? ` ${tzAbbr}` : ""}
+        </p>
+      )}
+
+      {/* 3-day forecast */}
+      {data.daily && (
+        <div className="mt-3 pt-3 border-t border-border grid grid-cols-3 gap-2 text-center">
+          {data.daily.time.map((day, i) => {
+            const fc = describeCode(data.daily.weathercode[i]);
+            return (
+              <div key={day} className="flex flex-col items-center gap-0.5">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {i === 0 ? "Today" : formatDayName(day)}
+                </p>
+                <span className="text-lg" role="img" aria-label={fc.label}>{fc.icon}</span>
+                <p className="text-xs text-foreground font-medium">
+                  {Math.round(data.daily.temperature_2m_max[i])}° / {Math.round(data.daily.temperature_2m_min[i])}°
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

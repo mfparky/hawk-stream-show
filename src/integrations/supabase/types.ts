@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      roster: {
+        Row: {
+          id: string
+          jersey_number: string | null
+          player_name: string
+          position: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          jersey_number?: string | null
+          player_name: string
+          position?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          jersey_number?: string | null
+          player_name?: string
+          position?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           key: string

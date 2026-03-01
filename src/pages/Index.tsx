@@ -1,8 +1,10 @@
+import { Link } from "react-router-dom";
+import { Settings } from "lucide-react";
 import Header from "@/components/Header";
 import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import WeatherWidget from "@/components/WeatherWidget";
-import VenueMap from "@/components/VenueMap";
+
 import ScoreboardWidget from "@/components/ScoreboardWidget";
 import SponsorWall from "@/components/SponsorWall";
 import ViewerNameModal from "@/components/ViewerNameModal";
@@ -68,17 +70,22 @@ const Index = () => {
                 lon={venue.venueLon!}
                 venueName={venue.venueName!}
               />
-              <VenueMap
-                lat={venue.venueLat!}
-                lon={venue.venueLon!}
-                venueName={venue.venueName!}
-              />
             </div>
           )}
         </div>
 
         {/* Sponsor logo wall — at bottom when stream is active */}
         {!!activeUrl && <SponsorWall />}
+
+        <div className="flex justify-center pb-4">
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+          >
+            <Settings className="h-3 w-3" />
+            Admin
+          </Link>
+        </div>
       </main>
     </div>
   );
