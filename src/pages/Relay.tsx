@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, RefreshCw, Wifi, WifiOff, Radio,
@@ -184,12 +184,10 @@ const Relay = () => {
   void tick;
 
   const isLive    = stats?.live ?? false;
-  const stream    = stats?.stream ?? null;
-  const source    = stats?.source ?? null;
-  const pushCount = stats?.pushClients.length ?? 0;
+  const pushCount = stats?.pushCount ?? 0;
 
   // Checklist derived states
-  const mevoConnected   = !!source;
+  const mevoConnected   = stats?.srcConnected ?? false;
   const youtubeActive   = pushCount >= 1;
   const gcActive        = pushCount >= 2;
   const allGood         = mevoConnected && youtubeActive && gcActive;
@@ -229,17 +227,16 @@ const Relay = () => {
               <p className={`text-2xl font-bold tracking-tight ${isLive ? "text-green-500" : "text-muted-foreground"}`}>
                 {isLive ? "LIVE" : "OFFLINE"}
               </p>
-              {stream && stream.bwIn > 0 && (
+              {stats && stats.bwIn > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {stream.width > 0 ? `${stream.width}×${stream.height} · ` : ""}{bps(stream.bwIn)}
+                  {stats.width > 0 ? `${stats.width}×${stats.height} · ` : ""}{bps(stats.bwIn)}
                 </p>
               )}
             </div>
           </div>
           <div className="text-right">
             {stats && <p className="text-xs text-muted-foreground">{timeAgo(stats.fetchedAt)}</p>}
-            {!statsUrl && <p className="text-xs text-muted-foreground">Configure server below</p>}
-            {error && statsUrl && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
         </div>
 
@@ -273,10 +270,8 @@ const Relay = () => {
                 </div>
               </div>
             </div>
-            {mevoConnected && source && (
-              <p className="text-xs text-green-500 mt-1">
-                Connected from {source.address}
-              </p>
+            {mevoConnected && (
+              <p className="text-xs text-green-500 mt-1">Mevo connected</p>
             )}
           </Step>
 
@@ -317,11 +312,11 @@ const Relay = () => {
               <Wifi className="h-3 w-3" /> Source
             </div>
             <div className="flex items-center gap-2">
-              <Dot on={!!source} pulse />
-              <span className="text-sm font-medium">{source ? "Mevo" : "No input"}</span>
+              <Dot on={mevoConnected} pulse />
+              <span className="text-sm font-medium">{mevoConnected ? "Mevo" : "No input"}</span>
             </div>
-            {stream && stream.bwIn > 0 && (
-              <p className="text-sm font-semibold tabular-nums">{bps(stream.bwIn)}</p>
+            {stats && stats.bwIn > 0 && (
+              <p className="text-sm font-semibold tabular-nums">{bps(stats.bwIn)}</p>
             )}
           </div>
           <div className="rounded-xl border border-border bg-card p-4 space-y-2">

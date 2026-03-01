@@ -6,3 +6,13 @@ services:
       - "8080:8080"   # Stats page  — optional, remove if not needed
     env_file: .env
     restart: unless-stopped
+
+  stats-pusher:
+    image: python:3.12-alpine
+    command: python /stats-pusher.py
+    volumes:
+      - ./stats-pusher.py:/stats-pusher.py:ro
+    env_file: .env
+    depends_on:
+      - rtmp-relay
+    restart: unless-stopped
