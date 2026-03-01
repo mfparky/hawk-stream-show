@@ -51,7 +51,7 @@ const POLL_INTERVAL  = 5000;
 // HTTP request (which would be blocked as mixed content from an HTTPS page).
 // The Edge Function lives on a separate Supabase project from the main DB.
 const EF_URL = "https://zhhqakxjywbipmeyvlum.supabase.co";
-const EF_KEY = "REPLACE_WITH_ANON_KEY_FOR_zhhqakxjywbipmeyvlum";
+const EF_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoaHFha3hqeXdiaXBtZXl2bHVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NDgwMzAsImV4cCI6MjA4NDQyNDAzMH0.XPDfMQf60GuYZgnoBh4XLUD1Hc51XYORXuTMPPeN7Cs";
 
 function proxyUrl(statsUrl: string): string {
   return `${EF_URL}/functions/v1/rtmp-stats?url=${encodeURIComponent(statsUrl)}`;
