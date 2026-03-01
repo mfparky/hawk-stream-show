@@ -310,36 +310,34 @@ const Relay = () => {
           </Step>
         </div>
 
-        {/* ── Live signal health (shown when live) ── */}
-        {isLive && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                <Wifi className="h-3 w-3" /> Source
-              </div>
-              <div className="flex items-center gap-2">
-                <Dot on={!!source} pulse />
-                <span className="text-sm font-medium">{source ? "Mevo" : "No input"}</span>
-              </div>
-              {stream && stream.bwIn > 0 && (
-                <p className="text-sm font-semibold tabular-nums">{bps(stream.bwIn)}</p>
-              )}
+        {/* ── Signal health — always visible ── */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <Wifi className="h-3 w-3" /> Source
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                <Radio className="h-3 w-3" /> Destinations
-              </div>
-              <div className="flex items-center gap-2">
-                <Dot on={youtubeActive} pulse />
-                <span className="text-sm font-medium">YouTube</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Dot on={gcActive} pulse />
-                <span className="text-sm font-medium">GameChanger</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <Dot on={!!source} pulse />
+              <span className="text-sm font-medium">{source ? "Mevo" : "No input"}</span>
+            </div>
+            {stream && stream.bwIn > 0 && (
+              <p className="text-sm font-semibold tabular-nums">{bps(stream.bwIn)}</p>
+            )}
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <Radio className="h-3 w-3" /> Destinations
+            </div>
+            <div className="flex items-center gap-2">
+              <Dot on={youtubeActive} pulse />
+              <span className="text-sm font-medium">YouTube</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Dot on={gcActive} pulse />
+              <span className="text-sm font-medium">GameChanger</span>
             </div>
           </div>
-        )}
+        </div>
 
         {/* ── Score controls ── */}
         {score.enabled && (
