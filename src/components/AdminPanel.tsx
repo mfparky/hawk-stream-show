@@ -143,7 +143,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   };
 
   return (
-    <Collapsible>
+    <Collapsible defaultOpen>
       <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-5 py-3 text-muted-foreground transition-colors hover:text-foreground">
         <span className="flex items-center gap-2 text-sm font-medium">
           <Settings className="h-4 w-4" />
@@ -154,6 +154,43 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
 
       <CollapsibleContent>
         <div className="mt-2 rounded-lg border border-border bg-card p-3 sm:p-5 space-y-3 sm:space-y-5">
+
+          {/* ── Operator / Mevo setup — first so it's easy to find ── */}
+          <section>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Operator Setup
+            </p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Mevo RTMP credentials for the camera operator.
+            </p>
+            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              Mevo RTMP Server URL
+            </label>
+            <Input
+              value={draft.rtmpIngestUrl}
+              onChange={set("rtmpIngestUrl")}
+              placeholder="rtmp://138.197.140.107/live"
+              className="font-mono text-sm"
+            />
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              Mevo Stream Key
+            </label>
+            <Input
+              value={draft.rtmpStreamKey}
+              onChange={set("rtmpStreamKey")}
+              placeholder="02610026"
+              className="font-mono text-sm"
+            />
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              YouTube Studio URL
+              <span className="ml-1.5 font-normal text-xs">(for one-tap link in monitor)</span>
+            </label>
+            <Input
+              value={draft.youtubeStudioUrl}
+              onChange={set("youtubeStudioUrl")}
+              placeholder="https://studio.youtube.com/..."
+            />
+          </section>
 
           {/* ── Stream ── */}
           <section>
@@ -359,43 +396,6 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               value={draft.scoreStatus}
               onChange={set("scoreStatus")}
               placeholder="e.g. Q3, Halftime, Final, 5th Inning"
-            />
-          </section>
-
-          {/* ── Operator / Game-day checklist ── */}
-          <section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Operator Setup
-            </p>
-            <p className="mb-3 text-xs text-muted-foreground">
-              These are shown on the Stream Monitor page so a non-technical operator knows exactly what to type into the Mevo app.
-            </p>
-            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              Mevo RTMP Server URL
-            </label>
-            <Input
-              value={draft.rtmpIngestUrl}
-              onChange={set("rtmpIngestUrl")}
-              placeholder="rtmp://138.197.140.107/live"
-              className="font-mono text-sm"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              Mevo Stream Key
-            </label>
-            <Input
-              value={draft.rtmpStreamKey}
-              onChange={set("rtmpStreamKey")}
-              placeholder="02610026"
-              className="font-mono text-sm"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              YouTube Studio URL
-              <span className="ml-1.5 font-normal text-xs">(for one-tap link in monitor)</span>
-            </label>
-            <Input
-              value={draft.youtubeStudioUrl}
-              onChange={set("youtubeStudioUrl")}
-              placeholder="https://studio.youtube.com/..."
             />
           </section>
 
