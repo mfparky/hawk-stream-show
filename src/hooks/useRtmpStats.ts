@@ -61,6 +61,7 @@ export function useRtmpStats() {
     () => localStorage.getItem(STATS_URL_KEY) ?? ""
   );
   const [stats, setStats]     = useState<RtmpStats | null>(null);
+  const [rawXml, setRawXml]   = useState<string | null>(null);
   const [error, setError]     = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -82,6 +83,7 @@ export function useRtmpStats() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
+      setRawXml(text);
       setStats(parseStats(text));
       setError(null);
     } catch (e) {
@@ -98,5 +100,5 @@ export function useRtmpStats() {
     return () => clearInterval(id);
   }, [fetchStats, statsUrl]);
 
-  return { stats, error, loading, statsUrl, saveUrl, refetch: fetchStats };
+  return { stats, rawXml, error, loading, statsUrl, saveUrl, refetch: fetchStats };
 }

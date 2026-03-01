@@ -107,7 +107,7 @@ function Stepper({ label, value, onMinus, onPlus }: {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 const Relay = () => {
-  const { stats, error, loading, statsUrl, saveUrl, refetch } = useRtmpStats();
+  const { stats, rawXml, error, loading, statsUrl, saveUrl, refetch } = useRtmpStats();
   const { score, adjust } = useScore();
 
   const [urlDraft, setUrlDraft] = useState(statsUrl);
@@ -250,6 +250,30 @@ const Relay = () => {
               onPlus={() => adjust("awayScore", 1)}
             />
           </div>
+        )}
+
+        {/* ── Debug — raw response ── */}
+        {statsUrl && (
+          <Collapsible>
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-muted-foreground">
+              <span className="text-xs">Raw server response</span>
+              <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-2 rounded-xl border border-border bg-card p-3">
+                {error && (
+                  <p className="text-xs text-destructive font-mono break-all">Error: {error}</p>
+                )}
+                {rawXml ? (
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-all overflow-auto max-h-60">
+                    {rawXml.slice(0, 2000)}
+                  </pre>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{loading ? "Fetching…" : "No response yet"}</p>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
         {/* ── Server config ── */}
