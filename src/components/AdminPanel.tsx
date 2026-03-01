@@ -5,19 +5,22 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin, Minus, Plus } from "lucide-react";
 
 export interface AdminSettings {
-  streamUrl:      string;
-  channelId:      string;
-  youtubeApiKey:  string;
-  venueName:      string;
-  venueAddress:   string;
-  venueLat:       string;
-  venueLon:       string;
-  scoreEnabled:   string;
-  scoreHomeTeam:  string;
-  scoreAwayTeam:  string;
-  scoreHomeScore: string;
-  scoreAwayScore: string;
-  scoreStatus:    string;
+  streamUrl:        string;
+  channelId:        string;
+  youtubeApiKey:    string;
+  venueName:        string;
+  venueAddress:     string;
+  venueLat:         string;
+  venueLon:         string;
+  scoreEnabled:     string;
+  scoreHomeTeam:    string;
+  scoreAwayTeam:    string;
+  scoreHomeScore:   string;
+  scoreAwayScore:   string;
+  scoreStatus:      string;
+  rtmpIngestUrl:    string;
+  rtmpStreamKey:    string;
+  youtubeStudioUrl: string;
 }
 
 interface AdminPanelProps {
@@ -356,6 +359,43 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               value={draft.scoreStatus}
               onChange={set("scoreStatus")}
               placeholder="e.g. Q3, Halftime, Final, 5th Inning"
+            />
+          </section>
+
+          {/* ── Operator / Game-day checklist ── */}
+          <section>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Operator Setup
+            </p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              These are shown on the Stream Monitor page so a non-technical operator knows exactly what to type into the Mevo app.
+            </p>
+            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              Mevo RTMP Server URL
+            </label>
+            <Input
+              value={draft.rtmpIngestUrl}
+              onChange={set("rtmpIngestUrl")}
+              placeholder="rtmp://138.197.140.107/live"
+              className="font-mono text-sm"
+            />
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              Mevo Stream Key
+            </label>
+            <Input
+              value={draft.rtmpStreamKey}
+              onChange={set("rtmpStreamKey")}
+              placeholder="02610026"
+              className="font-mono text-sm"
+            />
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              YouTube Studio URL
+              <span className="ml-1.5 font-normal text-xs">(for one-tap link in monitor)</span>
+            </label>
+            <Input
+              value={draft.youtubeStudioUrl}
+              onChange={set("youtubeStudioUrl")}
+              placeholder="https://studio.youtube.com/..."
             />
           </section>
 

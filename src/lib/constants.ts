@@ -6,6 +6,10 @@ export const VENUE_ADDRESS_KEY  = "venue_address";
 export const VENUE_LAT_KEY      = "venue_lat";
 export const VENUE_LON_KEY      = "venue_lon";
 
+export const RTMP_INGEST_URL_KEY  = "rtmp_ingest_url";
+export const RTMP_STREAM_KEY_KEY  = "rtmp_stream_key";
+export const YOUTUBE_STUDIO_URL_KEY = "youtube_studio_url";
+
 export const SCORE_ENABLED_KEY    = "score_enabled";
 export const SCORE_HOME_TEAM_KEY  = "score_home_team";
 export const SCORE_AWAY_TEAM_KEY  = "score_away_team";

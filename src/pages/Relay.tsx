@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RefreshCw, Wifi, WifiOff, Radio, ChevronDown, Minus, Plus, Settings } from "lucide-react";
+import {
+  ArrowLeft, RefreshCw, Wifi, WifiOff, Radio,
+  ChevronDown, Minus, Plus, Settings, Copy, Check,
+  ExternalLink, Smartphone, Tv, CircleCheck, Circle,
+} from "lucide-react";
 import { useRtmpStats } from "@/hooks/useRtmpStats";
+import { useOperatorSettings } from "@/hooks/useOperatorSettings";
 import { supabase } from "@/lib/supabase";
 import {
   SCORE_ENABLED_KEY,
@@ -15,26 +20,20 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// ── Score state ────────────────────────────────────────────────────────────────
+// ── Score ─────────────────────────────────────────────────────────────────────
 interface Score {
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number;
-  awayScore: number;
-  status: string;
-  enabled: boolean;
+  homeTeam: string; awayTeam: string;
+  homeScore: number; awayScore: number;
+  status: string; enabled: boolean;
 }
-
 const SCORE_KEYS = [
   SCORE_ENABLED_KEY, SCORE_HOME_TEAM_KEY, SCORE_AWAY_TEAM_KEY,
   SCORE_HOME_SCORE_KEY, SCORE_AWAY_SCORE_KEY, SCORE_STATUS_KEY,
 ];
-
 function useScore() {
   const [score, setScore] = useState<Score>({
     homeTeam: "", awayTeam: "", homeScore: 0, awayScore: 0, status: "", enabled: false,
   });
-
   const load = useCallback(async () => {
     const { data } = await supabase.from("settings").select("key, value").in("key", SCORE_KEYS);
     if (!data) return;
@@ -48,7 +47,6 @@ function useScore() {
       status:    map[SCORE_STATUS_KEY]     || "",
     });
   }, []);
-
   useEffect(() => {
     load();
     const ch = supabase.channel("relay-score")
@@ -56,7 +54,6 @@ function useScore() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [load]);
-
   const adjust = async (field: "homeScore" | "awayScore", delta: number) => {
     const next = { ...score, [field]: Math.max(0, score[field] + delta) };
     setScore(next);
@@ -65,16 +62,14 @@ function useScore() {
       { key, value: String(next[field]), updated_at: new Date().toISOString() },
     ]);
   };
-
   return { score, adjust };
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function bps(bytes: number) {
   const kbps = (bytes * 8) / 1000;
   return kbps >= 1000 ? `${(kbps / 1000).toFixed(1)} Mbps` : `${Math.round(kbps)} Kbps`;
 }
-
 function timeAgo(d: Date) {
   const s = Math.round((Date.now() - d.getTime()) / 1000);
   if (s < 5)  return "just now";
@@ -82,13 +77,51 @@ function timeAgo(d: Date) {
   return `${Math.floor(s / 60)}m ago`;
 }
 
-// ── Dot status indicator ───────────────────────────────────────────────────────
+// ── Copy button ───────────────────────────────────────────────────────────────
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={copy}
+      className="ml-2 shrink-0 text-muted-foreground active:text-foreground transition-colors"
+      aria-label="Copy"
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
+
+// ── Status dot ────────────────────────────────────────────────────────────────
 function Dot({ on, pulse }: { on: boolean; pulse?: boolean }) {
   return (
     <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
       <span className={`absolute inline-flex h-full w-full rounded-full ${on ? "bg-green-500" : "bg-red-500"} ${pulse && on ? "animate-ping opacity-75" : ""}`} />
       <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${on ? "bg-green-500" : "bg-red-500"}`} />
     </span>
+  );
+}
+
+// ── Checklist step ────────────────────────────────────────────────────────────
+function Step({
+  done, label, children,
+}: { done: boolean; label: string; children?: React.ReactNode }) {
+  return (
+    <div className={`rounded-xl border p-4 transition-colors ${done ? "border-green-500/40 bg-green-500/5" : "border-border bg-card"}`}>
+      <div className="flex items-start gap-3">
+        {done
+          ? <CircleCheck className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+          : <Circle className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />}
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-semibold ${done ? "text-green-500" : "text-foreground"}`}>{label}</p>
+          {children && <div className="mt-2 space-y-1">{children}</div>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -100,19 +133,35 @@ function Stepper({ label, value, onMinus, onPlus }: {
     <div className="flex items-center justify-between gap-3 py-2">
       <span className="text-sm font-medium text-muted-foreground w-24 truncate">{label}</span>
       <div className="flex items-center gap-3">
-        <button
-          onClick={onMinus}
-          className="h-11 w-11 rounded-full border border-border bg-card flex items-center justify-center active:bg-accent transition-colors"
-        >
+        <button onClick={onMinus} className="h-11 w-11 rounded-full border border-border bg-card flex items-center justify-center active:bg-accent transition-colors">
           <Minus className="h-4 w-4" />
         </button>
         <span className="w-8 text-center text-2xl font-bold tabular-nums">{value}</span>
-        <button
-          onClick={onPlus}
-          className="h-11 w-11 rounded-full border border-border bg-card flex items-center justify-center active:bg-accent transition-colors"
-        >
+        <button onClick={onPlus} className="h-11 w-11 rounded-full border border-border bg-card flex items-center justify-center active:bg-accent transition-colors">
           <Plus className="h-4 w-4" />
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Mono field with copy ──────────────────────────────────────────────────────
+function MonoField({ label, value, obscure }: { label: string; value: string; obscure?: boolean }) {
+  const [show, setShow] = useState(!obscure);
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+      <div className="flex items-center gap-1">
+        <code className="flex-1 font-mono text-sm text-foreground break-all">
+          {obscure && !show ? "••••••••" : value}
+        </code>
+        {obscure && (
+          <button onClick={() => setShow((s) => !s)} className="text-xs text-muted-foreground shrink-0">
+            {show ? "hide" : "show"}
+          </button>
+        )}
+        <CopyButton value={value} />
       </div>
     </div>
   );
@@ -121,23 +170,31 @@ function Stepper({ label, value, onMinus, onPlus }: {
 // ── Main page ──────────────────────────────────────────────────────────────────
 const Relay = () => {
   const { stats, error, loading, statsUrl, saveUrl, refetch } = useRtmpStats();
+  const operator = useOperatorSettings();
   const { score, adjust } = useScore();
-  const [urlDraft, setUrlDraft] = useState(statsUrl);
-  const [tick, setTick]  = useState(0);
 
-  // Re-render every second so "time ago" stays fresh
+  const [urlDraft, setUrlDraft] = useState(statsUrl);
+  const [tick, setTick] = useState(0);
+
+  // Tick every second so "time ago" stays fresh
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
   void tick;
 
-  const handleSaveUrl = () => saveUrl(urlDraft.trim());
-
   const isLive    = stats?.live ?? false;
   const stream    = stats?.stream ?? null;
   const source    = stats?.source ?? null;
   const pushCount = stats?.pushClients.length ?? 0;
+
+  // Checklist derived states
+  const mevoConnected   = !!source;
+  const youtubeActive   = pushCount >= 1;
+  const gcActive        = pushCount >= 2;
+  const allGood         = mevoConnected && youtubeActive && gcActive;
+
+  const handleSaveUrl = () => saveUrl(urlDraft.trim());
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,76 +217,134 @@ const Relay = () => {
 
       <main className="mx-auto max-w-lg px-4 py-5 space-y-4">
 
-        {/* ── Live status badge ── */}
-        <div className="rounded-xl border border-border bg-card p-5 flex items-center justify-between">
+        {/* ── Overall status ── */}
+        <div className={`rounded-xl border p-5 flex items-center justify-between transition-colors ${
+          allGood ? "border-green-500/40 bg-green-500/5" : "border-border bg-card"
+        }`}>
           <div className="flex items-center gap-3">
-            {isLive ? <Radio className="h-6 w-6 text-green-500" /> : <WifiOff className="h-6 w-6 text-muted-foreground" />}
+            {isLive
+              ? <Radio className="h-6 w-6 text-green-500" />
+              : <WifiOff className="h-6 w-6 text-muted-foreground" />}
             <div>
               <p className={`text-2xl font-bold tracking-tight ${isLive ? "text-green-500" : "text-muted-foreground"}`}>
                 {isLive ? "LIVE" : "OFFLINE"}
               </p>
-              {stream && (
+              {stream && stream.bwIn > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {stream.width > 0 ? `${stream.width}×${stream.height}` : ""} {stream.videoCodec}
+                  {stream.width > 0 ? `${stream.width}×${stream.height} · ` : ""}{bps(stream.bwIn)}
                 </p>
               )}
             </div>
           </div>
-          {stats && (
-            <p className="text-xs text-muted-foreground">{timeAgo(stats.fetchedAt)}</p>
-          )}
-          {!statsUrl && (
-            <p className="text-xs text-muted-foreground">No server configured</p>
-          )}
-          {error && statsUrl && (
-            <p className="text-xs text-destructive">{error}</p>
-          )}
-        </div>
-
-        {/* ── Source + destinations ── */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Source / Mevo */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              <Wifi className="h-3 w-3" /> Source
-            </div>
-            <div className="flex items-center gap-2">
-              <Dot on={!!source} pulse />
-              <span className="text-sm font-medium">{source ? "Mevo" : "No input"}</span>
-            </div>
-            {source && (
-              <p className="text-xs text-muted-foreground">{source.address}</p>
-            )}
-            {stream && stream.bwIn > 0 && (
-              <p className="text-sm font-semibold tabular-nums">{bps(stream.bwIn)}</p>
-            )}
-          </div>
-
-          {/* Push destinations */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              <Radio className="h-3 w-3" /> Destinations
-            </div>
-            <div className="flex items-center gap-2">
-              <Dot on={pushCount >= 1} pulse />
-              <span className="text-sm font-medium">YouTube</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Dot on={pushCount >= 2} pulse />
-              <span className="text-sm font-medium">GameChanger</span>
-            </div>
-            {isLive && (
-              <p className="text-xs text-muted-foreground">{pushCount}/2 active</p>
-            )}
+          <div className="text-right">
+            {stats && <p className="text-xs text-muted-foreground">{timeAgo(stats.fetchedAt)}</p>}
+            {!statsUrl && <p className="text-xs text-muted-foreground">Configure server below</p>}
+            {error && statsUrl && <p className="text-xs text-destructive">{error}</p>}
           </div>
         </div>
 
-        {/* ── Quick score controls ── */}
+        {/* ── Game-day startup checklist ── */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-1">
+            Game Day Startup
+          </p>
+
+          {/* Step 1 — Hotspot (manual) */}
+          <Step done={false} label="1 · Enable phone hotspot">
+            <p className="text-xs text-muted-foreground">Turn on your hotspot before anything else.</p>
+          </Step>
+
+          {/* Step 2 — Mevo Wi-Fi + RTMP config */}
+          <Step done={mevoConnected} label="2 · Connect Mevo & start streaming">
+            <p className="text-xs text-muted-foreground mb-2">
+              Connect the Mevo to your hotspot Wi-Fi, then open the Mevo app and enter:
+            </p>
+            <div className="rounded-lg border border-border bg-background p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <Smartphone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-2 min-w-0">
+                  <MonoField label="RTMP Server" value={operator.rtmpIngestUrl} />
+                  <MonoField label="Stream Key" value={operator.rtmpStreamKey} obscure />
+                  {!operator.rtmpIngestUrl && (
+                    <p className="text-xs text-muted-foreground italic">
+                      Ask admin to fill in the Mevo settings at /admin
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+            {mevoConnected && source && (
+              <p className="text-xs text-green-500 mt-1">
+                Connected from {source.address}
+              </p>
+            )}
+          </Step>
+
+          {/* Step 3 — YouTube go live */}
+          <Step done={youtubeActive} label="3 · Go live on YouTube Studio">
+            <div className="flex items-center gap-2">
+              <Tv className="h-4 w-4 text-muted-foreground shrink-0" />
+              {operator.youtubeStudioUrl ? (
+                <a
+                  href={operator.youtubeStudioUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-primary underline-offset-2 hover:underline"
+                >
+                  Open YouTube Studio <ExternalLink className="h-3 w-3" />
+                </a>
+              ) : (
+                <span className="text-xs text-muted-foreground">Open YouTube Studio → Go Live</span>
+              )}
+            </div>
+            {youtubeActive && (
+              <p className="text-xs text-green-500 mt-1">YouTube receiving stream</p>
+            )}
+          </Step>
+
+          {/* Step 4 — GameChanger auto */}
+          <Step done={gcActive} label="4 · GameChanger receiving">
+            {gcActive
+              ? <p className="text-xs text-green-500">GameChanger receiving stream</p>
+              : <p className="text-xs text-muted-foreground">Auto-detected — no action needed</p>}
+          </Step>
+        </div>
+
+        {/* ── Live signal health (shown when live) ── */}
+        {isLive && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <Wifi className="h-3 w-3" /> Source
+              </div>
+              <div className="flex items-center gap-2">
+                <Dot on={!!source} pulse />
+                <span className="text-sm font-medium">{source ? "Mevo" : "No input"}</span>
+              </div>
+              {stream && stream.bwIn > 0 && (
+                <p className="text-sm font-semibold tabular-nums">{bps(stream.bwIn)}</p>
+              )}
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <Radio className="h-3 w-3" /> Destinations
+              </div>
+              <div className="flex items-center gap-2">
+                <Dot on={youtubeActive} pulse />
+                <span className="text-sm font-medium">YouTube</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Dot on={gcActive} pulse />
+                <span className="text-sm font-medium">GameChanger</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Score controls ── */}
         {score.enabled && (
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Score
-            </p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Score</p>
             {score.status && (
               <p className="mb-3 text-sm text-muted-foreground">{score.status}</p>
             )}
@@ -271,12 +386,10 @@ const Relay = () => {
                   className="font-mono text-xs"
                   onKeyDown={(e) => e.key === "Enter" && handleSaveUrl()}
                 />
-                <Button size="sm" onClick={handleSaveUrl} className="shrink-0">
-                  Set
-                </Button>
+                <Button size="sm" onClick={handleSaveUrl} className="shrink-0">Set</Button>
               </div>
               {statsUrl && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground break-all">
                   Current: <code className="font-mono">{statsUrl}</code>
                 </p>
               )}
