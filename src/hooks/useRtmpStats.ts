@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 
 export interface RtmpStats {
   live:         boolean;
@@ -50,9 +49,12 @@ const POLL_INTERVAL  = 5000;
 
 // Route through the Supabase Edge Function so the browser never makes a plain
 // HTTP request (which would be blocked as mixed content from an HTTPS page).
+// The Edge Function lives on a separate Supabase project from the main DB.
+const EF_URL = "https://zhhqakxjywbipmeyvlum.supabase.co";
+const EF_KEY = "REPLACE_WITH_ANON_KEY_FOR_zhhqakxjywbipmeyvlum";
 
 function proxyUrl(statsUrl: string): string {
-  return `${SUPABASE_URL}/functions/v1/rtmp-stats?url=${encodeURIComponent(statsUrl)}`;
+  return `${EF_URL}/functions/v1/rtmp-stats?url=${encodeURIComponent(statsUrl)}`;
 }
 
 export function useRtmpStats() {
@@ -76,8 +78,8 @@ export function useRtmpStats() {
       const res = await fetch(proxyUrl(statsUrl), {
         cache: "no-store",
         headers: {
-          "apikey":        SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey":        EF_KEY,
+          "Authorization": `Bearer ${EF_KEY}`,
         },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
