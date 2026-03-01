@@ -18,7 +18,7 @@ import {
   SCORE_STATUS_KEY,
 } from "@/lib/constants";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Radio } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -145,13 +145,22 @@ const Admin = () => {
       <Header subtitle="Admin Panel" />
 
       <main className="mx-auto max-w-2xl px-4 py-4 sm:py-8 space-y-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to stream
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to stream
+          </Link>
+          <Link
+            to="/relay"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Radio className="h-4 w-4" />
+            Stream monitor
+          </Link>
+        </div>
 
         <AdminPanel settings={settings} onSave={handleSave} />
       </main>
