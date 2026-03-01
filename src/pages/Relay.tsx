@@ -150,6 +150,31 @@ const Relay = () => {
 
       <main className="mx-auto max-w-lg px-4 py-5 space-y-4">
 
+        {/* ── No URL configured — show setup prompt prominently ── */}
+        {!statsUrl && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+              Relay server not configured
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Enter your relay's stats URL to start monitoring (e.g.{" "}
+              <code className="font-mono">http://138.197.140.107:8080/stat</code>).
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={urlDraft}
+                onChange={(e) => setUrlDraft(e.target.value)}
+                placeholder="http://SERVER_IP:8080/stat"
+                className="font-mono text-xs"
+                onKeyDown={(e) => e.key === "Enter" && handleSaveUrl()}
+              />
+              <Button size="sm" onClick={handleSaveUrl} disabled={!urlDraft.trim()} className="shrink-0">
+                Set
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* ── Overall status ── */}
         <div className={`rounded-xl border p-5 flex items-center justify-between transition-colors ${
           allGood ? "border-green-500/40 bg-green-500/5" : "border-border bg-card"
