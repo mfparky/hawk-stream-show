@@ -1,12 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, RefreshCw, Wifi, WifiOff, Radio,
-  ChevronDown, Minus, Plus, Settings, Copy, Check,
-  ExternalLink, Smartphone, Tv, CircleCheck, Circle,
+  ChevronDown, Minus, Plus, Settings,
 } from "lucide-react";
 import { useRtmpStats } from "@/hooks/useRtmpStats";
-import { useOperatorSettings } from "@/hooks/useOperatorSettings";
 import { supabase } from "@/lib/supabase";
 import {
   SCORE_ENABLED_KEY,
@@ -77,25 +75,6 @@ function timeAgo(d: Date) {
   return `${Math.floor(s / 60)}m ago`;
 }
 
-// ── Copy button ───────────────────────────────────────────────────────────────
-function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      onClick={copy}
-      className="ml-2 shrink-0 text-muted-foreground active:text-foreground transition-colors"
-      aria-label="Copy"
-    >
-      {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-    </button>
-  );
-}
-
 // ── Status dot ────────────────────────────────────────────────────────────────
 function Dot({ on, pulse }: { on: boolean; pulse?: boolean }) {
   return (
@@ -103,25 +82,6 @@ function Dot({ on, pulse }: { on: boolean; pulse?: boolean }) {
       <span className={`absolute inline-flex h-full w-full rounded-full ${on ? "bg-green-500" : "bg-red-500"} ${pulse && on ? "animate-ping opacity-75" : ""}`} />
       <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${on ? "bg-green-500" : "bg-red-500"}`} />
     </span>
-  );
-}
-
-// ── Checklist step ────────────────────────────────────────────────────────────
-function Step({
-  done, label, children,
-}: { done: boolean; label: string; children?: React.ReactNode }) {
-  return (
-    <div className={`rounded-xl border p-4 transition-colors ${done ? "border-green-500/40 bg-green-500/5" : "border-border bg-card"}`}>
-      <div className="flex items-start gap-3">
-        {done
-          ? <CircleCheck className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-          : <Circle className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />}
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold ${done ? "text-green-500" : "text-foreground"}`}>{label}</p>
-          {children && <div className="mt-2 space-y-1">{children}</div>}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -145,32 +105,9 @@ function Stepper({ label, value, onMinus, onPlus }: {
   );
 }
 
-// ── Mono field with copy ──────────────────────────────────────────────────────
-function MonoField({ label, value, obscure }: { label: string; value: string; obscure?: boolean }) {
-  const [show, setShow] = useState(!obscure);
-  if (!value) return null;
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-      <div className="flex items-center gap-1">
-        <code className="flex-1 font-mono text-sm text-foreground break-all">
-          {obscure && !show ? "••••••••" : value}
-        </code>
-        {obscure && (
-          <button onClick={() => setShow((s) => !s)} className="text-xs text-muted-foreground shrink-0">
-            {show ? "hide" : "show"}
-          </button>
-        )}
-        <CopyButton value={value} />
-      </div>
-    </div>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────────
 const Relay = () => {
   const { stats, error, loading, statsUrl, saveUrl, refetch } = useRtmpStats();
-  const operator = useOperatorSettings();
   const { score, adjust } = useScore();
 
   const [urlDraft, setUrlDraft] = useState(statsUrl);
@@ -183,14 +120,12 @@ const Relay = () => {
   }, []);
   void tick;
 
-  const isLive    = stats?.live ?? false;
-  const pushCount = stats?.pushCount ?? 0;
-
-  // Checklist derived states
-  const mevoConnected   = stats?.srcConnected ?? false;
-  const youtubeActive   = pushCount >= 1;
-  const gcActive        = pushCount >= 2;
-  const allGood         = mevoConnected && youtubeActive && gcActive;
+  const isLive      = stats?.live ?? false;
+  const pushCount   = stats?.pushCount ?? 0;
+  const mevoConnected = stats?.srcConnected ?? false;
+  const youtubeActive = pushCount >= 1;
+  const gcActive      = pushCount >= 2;
+  const allGood       = mevoConnected && youtubeActive && gcActive;
 
   const handleSaveUrl = () => saveUrl(urlDraft.trim());
 
@@ -238,71 +173,6 @@ const Relay = () => {
             {stats && <p className="text-xs text-muted-foreground">{timeAgo(stats.fetchedAt)}</p>}
             {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
-        </div>
-
-        {/* ── Game-day startup checklist ── */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-1">
-            Game Day Startup
-          </p>
-
-          {/* Step 1 — Hotspot (manual) */}
-          <Step done={false} label="1 · Enable phone hotspot">
-            <p className="text-xs text-muted-foreground">Turn on your hotspot before anything else.</p>
-          </Step>
-
-          {/* Step 2 — Mevo Wi-Fi + RTMP config */}
-          <Step done={mevoConnected} label="2 · Connect Mevo & start streaming">
-            <p className="text-xs text-muted-foreground mb-2">
-              Connect the Mevo to your hotspot Wi-Fi, then open the Mevo app and enter:
-            </p>
-            <div className="rounded-lg border border-border bg-background p-3 space-y-3">
-              <div className="flex items-start gap-2">
-                <Smartphone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div className="flex-1 space-y-2 min-w-0">
-                  <MonoField label="RTMP Server" value={operator.rtmpIngestUrl} />
-                  <MonoField label="Stream Key" value={operator.rtmpStreamKey} obscure />
-                  {!operator.rtmpIngestUrl && (
-                    <p className="text-xs text-muted-foreground italic">
-                      Ask admin to fill in the Mevo settings at /admin
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-            {mevoConnected && (
-              <p className="text-xs text-green-500 mt-1">Mevo connected</p>
-            )}
-          </Step>
-
-          {/* Step 3 — YouTube go live */}
-          <Step done={youtubeActive} label="3 · Go live on YouTube Studio">
-            <div className="flex items-center gap-2">
-              <Tv className="h-4 w-4 text-muted-foreground shrink-0" />
-              {operator.youtubeStudioUrl ? (
-                <a
-                  href={operator.youtubeStudioUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-primary underline-offset-2 hover:underline"
-                >
-                  Open YouTube Studio <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : (
-                <span className="text-xs text-muted-foreground">Open YouTube Studio → Go Live</span>
-              )}
-            </div>
-            {youtubeActive && (
-              <p className="text-xs text-green-500 mt-1">YouTube receiving stream</p>
-            )}
-          </Step>
-
-          {/* Step 4 — GameChanger auto */}
-          <Step done={gcActive} label="4 · GameChanger receiving">
-            {gcActive
-              ? <p className="text-xs text-green-500">GameChanger receiving stream</p>
-              : <p className="text-xs text-muted-foreground">Auto-detected — no action needed</p>}
-          </Step>
         </div>
 
         {/* ── Signal health — always visible ── */}
