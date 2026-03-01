@@ -53,8 +53,13 @@ const POLL_INTERVAL  = 5000;
 const EF_URL = "https://zhhqakxjywbipmeyvlum.supabase.co";
 const EF_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoaHFha3hqeXdiaXBtZXl2bHVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NDgwMzAsImV4cCI6MjA4NDQyNDAzMH0.XPDfMQf60GuYZgnoBh4XLUD1Hc51XYORXuTMPPeN7Cs";
 
+function normalizeStatsUrl(raw: string): string {
+  if (!/^https?:\/\//i.test(raw)) return `http://${raw}`;
+  return raw;
+}
+
 function proxyUrl(statsUrl: string): string {
-  return `${EF_URL}/functions/v1/rtmp-stats?url=${encodeURIComponent(statsUrl)}`;
+  return `${EF_URL}/functions/v1/rtmp-stats?url=${encodeURIComponent(normalizeStatsUrl(statsUrl))}`;
 }
 
 export function useRtmpStats() {
