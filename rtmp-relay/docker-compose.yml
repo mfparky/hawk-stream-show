@@ -1,0 +1,8 @@
+services:
+  rtmp-relay:
+    build: .
+    ports:
+      - "1935:1935"   # RTMP ingest — point Mevo here
+      - "8080:8080"   # Stats page  — optional, remove if not needed
+    env_file: .env
+    restart: unless-stopped
