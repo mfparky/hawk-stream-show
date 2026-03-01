@@ -81,6 +81,15 @@ function parseStats(xml: string): RtmpStats {
 const STATS_URL_KEY = "rtmp_stats_url";
 const POLL_INTERVAL = 5000;
 
+// Route through a Supabase Edge Function so the browser never makes a plain
+// HTTP request (which would be blocked as mixed content from an HTTPS page).
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) ?? "";
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string) ?? "";
+
+function proxyUrl(statsUrl: string): string {
+  return `${SUPABASE_URL}/functions/v1/rtmp-stats?url=${encodeURIComponent(statsUrl)}`;
+}
+
 export function useRtmpStats() {
   const [statsUrl, setStatsUrlState] = useState<string>(
     () => localStorage.getItem(STATS_URL_KEY) ?? ""
@@ -98,7 +107,13 @@ export function useRtmpStats() {
     if (!statsUrl) return;
     setLoading(true);
     try {
-      const res = await fetch(statsUrl, { cache: "no-store" });
+      const res = await fetch(proxyUrl(statsUrl), {
+        cache: "no-store",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       setStats(parseStats(text));
