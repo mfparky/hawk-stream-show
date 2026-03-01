@@ -32,7 +32,9 @@ function parseStats(xml: string): RtmpStats {
 
   streamNode.querySelectorAll("client").forEach((c) => {
     const fv = getText(c, "flashver");
-    if (fv.startsWith("ngx")) {
+    // nginx push clients show up as "FMLE/3.0 (compatible; ngx-rtmp)" — they
+    // contain "ngx-rtmp" but may not start with "ngx".
+    if (fv.includes("ngx-rtmp") || fv.startsWith("ngx")) {
       pushCount++;
     } else if (c.querySelector("publishing")) {
       srcConnected = true;
