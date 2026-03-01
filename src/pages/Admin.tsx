@@ -16,6 +16,9 @@ import {
   SCORE_HOME_SCORE_KEY,
   SCORE_AWAY_SCORE_KEY,
   SCORE_STATUS_KEY,
+  RTMP_INGEST_URL_KEY,
+  RTMP_STREAM_KEY_KEY,
+  YOUTUBE_STUDIO_URL_KEY,
 } from "@/lib/constants";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Radio } from "lucide-react";
@@ -32,6 +35,7 @@ const KEYS = [
   VENUE_NAME_KEY, VENUE_ADDRESS_KEY, VENUE_LAT_KEY, VENUE_LON_KEY,
   SCORE_ENABLED_KEY, SCORE_HOME_TEAM_KEY, SCORE_AWAY_TEAM_KEY,
   SCORE_HOME_SCORE_KEY, SCORE_AWAY_SCORE_KEY, SCORE_STATUS_KEY,
+  RTMP_INGEST_URL_KEY, RTMP_STREAM_KEY_KEY, YOUTUBE_STUDIO_URL_KEY,
 ];
 
 const Admin = () => {
@@ -51,19 +55,22 @@ const Admin = () => {
   };
 
   const [settings, setSettings] = useState<AdminSettings>({
-    streamUrl:      "",
-    channelId:      "",
-    youtubeApiKey:  "",
-    venueName:      "",
-    venueAddress:   "",
-    venueLat:       "",
-    venueLon:       "",
-    scoreEnabled:   "",
-    scoreHomeTeam:  "",
-    scoreAwayTeam:  "",
-    scoreHomeScore: "",
-    scoreAwayScore: "",
-    scoreStatus:    "",
+    streamUrl:        "",
+    channelId:        "",
+    youtubeApiKey:    "",
+    venueName:        "",
+    venueAddress:     "",
+    venueLat:         "",
+    venueLon:         "",
+    scoreEnabled:     "",
+    scoreHomeTeam:    "",
+    scoreAwayTeam:    "",
+    scoreHomeScore:   "",
+    scoreAwayScore:   "",
+    scoreStatus:      "",
+    rtmpIngestUrl:    "",
+    rtmpStreamKey:    "",
+    youtubeStudioUrl: "",
   });
 
   useEffect(() => {
@@ -88,7 +95,10 @@ const Admin = () => {
           scoreAwayTeam:  map[SCORE_AWAY_TEAM_KEY]  ?? "",
           scoreHomeScore: map[SCORE_HOME_SCORE_KEY] ?? "",
           scoreAwayScore: map[SCORE_AWAY_SCORE_KEY] ?? "",
-          scoreStatus:    map[SCORE_STATUS_KEY]     ?? "",
+          scoreStatus:      map[SCORE_STATUS_KEY]        ?? "",
+          rtmpIngestUrl:    map[RTMP_INGEST_URL_KEY]     ?? "",
+          rtmpStreamKey:    map[RTMP_STREAM_KEY_KEY]     ?? "",
+          youtubeStudioUrl: map[YOUTUBE_STUDIO_URL_KEY]  ?? "",
         });
       });
   }, [unlocked]);
@@ -108,7 +118,10 @@ const Admin = () => {
       { key: SCORE_AWAY_TEAM_KEY, value: next.scoreAwayTeam  },
       { key: SCORE_HOME_SCORE_KEY,value: next.scoreHomeScore },
       { key: SCORE_AWAY_SCORE_KEY,value: next.scoreAwayScore },
-      { key: SCORE_STATUS_KEY,    value: next.scoreStatus    },
+      { key: SCORE_STATUS_KEY,       value: next.scoreStatus      },
+      { key: RTMP_INGEST_URL_KEY,    value: next.rtmpIngestUrl    },
+      { key: RTMP_STREAM_KEY_KEY,    value: next.rtmpStreamKey    },
+      { key: YOUTUBE_STUDIO_URL_KEY, value: next.youtubeStudioUrl },
     ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
 
     await supabase.from("settings").upsert(rows);
