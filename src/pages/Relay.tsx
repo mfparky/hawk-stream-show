@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, RefreshCw, Wifi, WifiOff, Radio,
-  ChevronDown, Minus, Plus, Settings,
+  ChevronDown, Minus, Plus, Settings, Copy, Check as CheckIcon,
 } from "lucide-react";
 import { useRtmpStats } from "@/hooks/useRtmpStats";
+import { useOperatorSettings } from "@/hooks/useOperatorSettings";
 import { supabase } from "@/lib/supabase";
 import {
   SCORE_ENABLED_KEY,
@@ -105,10 +106,31 @@ function Stepper({ label, value, onMinus, onPlus }: {
   );
 }
 
+// ── Copy-to-clipboard button ───────────────────────────────────────────────────
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      onClick={copy}
+      className="ml-2 shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+      title="Copy"
+    >
+      {copied ? <CheckIcon className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 const Relay = () => {
   const { stats, rawXml, error, loading, statsUrl, saveUrl, refetch } = useRtmpStats();
   const { score, adjust } = useScore();
+  const op = useOperatorSettings();
 
   const [urlDraft, setUrlDraft] = useState(statsUrl);
   const [tick, setTick] = useState(0);
@@ -228,6 +250,43 @@ const Relay = () => {
             </div>
           </div>
         </div>
+
+        {/* ── Mevo credentials ── */}
+        {(op.rtmpIngestUrl || op.rtmpStreamKey) && (
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Mevo Setup
+            </p>
+            {op.rtmpIngestUrl && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">RTMP Server</p>
+                <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                  <code className="text-xs font-mono break-all">{op.rtmpIngestUrl}</code>
+                  <CopyButton value={op.rtmpIngestUrl} />
+                </div>
+              </div>
+            )}
+            {op.rtmpStreamKey && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Stream Key</p>
+                <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                  <code className="text-xs font-mono break-all">{op.rtmpStreamKey}</code>
+                  <CopyButton value={op.rtmpStreamKey} />
+                </div>
+              </div>
+            )}
+            {op.youtubeStudioUrl && (
+              <a
+                href={op.youtubeStudioUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <Radio className="h-3 w-3" /> Open YouTube Studio
+              </a>
+            )}
+          </div>
+        )}
 
         {/* ── Score controls ── */}
         {score.enabled && (
