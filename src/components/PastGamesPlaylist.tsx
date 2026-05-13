@@ -42,9 +42,11 @@ async function fetchPlaylistItems(playlistId: string, apiKey: string): Promise<P
 interface Props {
   playlistId: string | null;
   apiKey: string | null;
+  onSelect?: (videoId: string) => void;
+  activeVideoId?: string | null;
 }
 
-const PastGamesPlaylist = ({ playlistId, apiKey }: Props) => {
+const PastGamesPlaylist = ({ playlistId, apiKey, onSelect, activeVideoId }: Props) => {
   const enabled = !!playlistId && !!apiKey;
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["yt-playlist", playlistId],
