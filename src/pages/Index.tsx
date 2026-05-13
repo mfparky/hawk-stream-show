@@ -54,14 +54,16 @@ const Index = () => {
         {/* Scoreboard — shown above video when enabled by admin */}
         <ScoreboardWidget />
 
-        {/* Live Stream — hero, full width */}
-        <YouTubeEmbed url={activeUrl} />
+        {/* Live Stream — hero, full width (also plays selected past games inline) */}
+        <YouTubeEmbed url={playerUrl} />
 
-        {/* Past games playlist — shown right under the "no stream" message */}
+        {/* Past games playlist — shown under the player */}
         {!activeUrl && (
           <PastGamesPlaylist
             playlistId={venue.youtubePlaylistId}
             apiKey={venue.youtubeApiKey}
+            onSelect={setSelectedPastVideoId}
+            activeVideoId={selectedPastVideoId}
           />
         )}
 
