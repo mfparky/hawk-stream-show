@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 interface YouTubeEmbedProps {
   url: string;
+  emptyState?: React.ReactNode;
 }
 
 const extractVideoId = (url: string): string | null => {
