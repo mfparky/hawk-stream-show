@@ -62,7 +62,7 @@ export function useScoreSettings(): ScoreSettings {
     load();
 
     const channel = supabase
-      .channel("score-settings")
+      .channel(`score-settings-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "settings" },
