@@ -42,9 +42,11 @@ async function fetchPlaylistItems(playlistId: string, apiKey: string): Promise<P
 interface Props {
   playlistId: string | null;
   apiKey: string | null;
+  onSelect?: (videoId: string) => void;
+  activeVideoId?: string | null;
 }
 
-const PastGamesPlaylist = ({ playlistId, apiKey }: Props) => {
+const PastGamesPlaylist = ({ playlistId, apiKey, onSelect, activeVideoId }: Props) => {
   const enabled = !!playlistId && !!apiKey;
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["yt-playlist", playlistId],
@@ -68,39 +70,56 @@ const PastGamesPlaylist = ({ playlistId, apiKey }: Props) => {
                 className="shrink-0 w-56 aspect-video rounded-lg bg-muted/40 animate-pulse snap-start"
               />
             ))
-          : items.map((item) => (
-              <a
-                key={item.videoId}
-                href={`https://www.youtube.com/watch?v=${item.videoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group shrink-0 w-56 snap-start"
-              >
-                <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-black">
-                  {item.thumbnail && (
-                    <img
-                      src={item.thumbnail}
-                      alt={item.title}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                    />
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 bg-black/30">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 shadow-lg">
-                      <svg viewBox="0 0 24 24" fill="white" className="h-5 w-5 translate-x-0.5">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
+          : items.map((item) => {
+              const isActive = activeVideoId === item.videoId;
+              const commonInner = (
+                <>
+                  <div className={`relative aspect-video overflow-hidden rounded-lg border bg-black ${isActive ? "border-primary ring-2 ring-primary" : "border-border"}`}>
+                    {item.thumbnail && (
+                      <img
+                        src={item.thumbnail}
+                        alt={item.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    )}
+                    <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 shadow-lg">
+                        <svg viewBox="0 0 24 24" fill="white" className="h-5 w-5 translate-x-0.5">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p className="mt-1.5 line-clamp-2 text-sm font-medium text-foreground group-hover:text-primary">
-                  {item.title}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(item.publishedAt).toLocaleDateString()}
-                </p>
-              </a>
-            ))}
+                  <p className="mt-1.5 line-clamp-2 text-sm font-medium text-foreground group-hover:text-primary text-left">
+                    {item.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground text-left">
+                    {new Date(item.publishedAt).toLocaleDateString()}
+                  </p>
+                </>
+              );
+              return onSelect ? (
+                <button
+                  key={item.videoId}
+                  type="button"
+                  onClick={() => onSelect(item.videoId)}
+                  className="group shrink-0 w-56 snap-start"
+                >
+                  {commonInner}
+                </button>
+              ) : (
+                <a
+                  key={item.videoId}
+                  href={`https://www.youtube.com/watch?v=${item.videoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group shrink-0 w-56 snap-start"
+                >
+                  {commonInner}
+                </a>
+              );
+            })}
       </div>
     </section>
   );

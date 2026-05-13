@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Settings } from "lucide-react";
 import Header from "@/components/Header";
@@ -34,6 +35,14 @@ const Index = () => {
   const activeUrl    = streamUrl || autoUrl;
   const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
 
+  // When a past game is selected, play it inline where the stream would be
+  const [selectedPastVideoId, setSelectedPastVideoId] = useState<string | null>(null);
+  // Clear past-game selection if a real stream becomes available
+  useEffect(() => {
+    if (activeUrl) setSelectedPastVideoId(null);
+  }, [activeUrl]);
+  const playerUrl = activeUrl || (selectedPastVideoId ? `https://www.youtube.com/watch?v=${selectedPastVideoId}` : "");
+
   return (
     <div className="min-h-screen bg-background">
       <ViewerNameModal open={needsPrompt} loading={viewerLoading} onSubmit={register} />
@@ -45,14 +54,16 @@ const Index = () => {
         {/* Scoreboard — shown above video when enabled by admin */}
         <ScoreboardWidget />
 
-        {/* Live Stream — hero, full width */}
-        <YouTubeEmbed url={activeUrl} />
+        {/* Live Stream — hero, full width (also plays selected past games inline) */}
+        <YouTubeEmbed url={playerUrl} />
 
-        {/* Past games playlist — shown right under the "no stream" message */}
+        {/* Past games playlist — shown under the player */}
         {!activeUrl && (
           <PastGamesPlaylist
             playlistId={venue.youtubePlaylistId}
             apiKey={venue.youtubeApiKey}
+            onSelect={setSelectedPastVideoId}
+            activeVideoId={selectedPastVideoId}
           />
         )}
 
