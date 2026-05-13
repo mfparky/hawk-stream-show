@@ -35,6 +35,14 @@ const Index = () => {
   const activeUrl    = streamUrl || autoUrl;
   const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
 
+  // When a past game is selected, play it inline where the stream would be
+  const [selectedPastVideoId, setSelectedPastVideoId] = useState<string | null>(null);
+  // Clear past-game selection if a real stream becomes available
+  useEffect(() => {
+    if (activeUrl) setSelectedPastVideoId(null);
+  }, [activeUrl]);
+  const playerUrl = activeUrl || (selectedPastVideoId ? `https://www.youtube.com/watch?v=${selectedPastVideoId}` : "");
+
   return (
     <div className="min-h-screen bg-background">
       <ViewerNameModal open={needsPrompt} loading={viewerLoading} onSubmit={register} />
