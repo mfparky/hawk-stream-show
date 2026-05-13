@@ -7,6 +7,7 @@ import WeatherWidget from "@/components/WeatherWidget";
 
 import ScoreboardWidget from "@/components/ScoreboardWidget";
 import SponsorWall from "@/components/SponsorWall";
+import PastGamesPlaylist from "@/components/PastGamesPlaylist";
 import ViewerNameModal from "@/components/ViewerNameModal";
 import WelcomeBanner from "@/components/WelcomeBanner";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
@@ -46,6 +47,14 @@ const Index = () => {
 
         {/* Live Stream — hero, full width */}
         <YouTubeEmbed url={activeUrl} />
+
+        {/* Past games playlist — shown right under the "no stream" message */}
+        {!activeUrl && (
+          <PastGamesPlaylist
+            playlistId={venue.youtubePlaylistId}
+            apiKey={venue.youtubeApiKey}
+          />
+        )}
 
         {/* Sponsor wall — right after embed when no stream */}
         {!activeUrl && <SponsorWall />}
