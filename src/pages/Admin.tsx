@@ -6,6 +6,7 @@ import {
   STREAM_URL_KEY,
   CHANNEL_ID_KEY,
   YOUTUBE_API_KEY_KEY,
+  YOUTUBE_PLAYLIST_ID_KEY,
   VENUE_NAME_KEY,
   VENUE_ADDRESS_KEY,
   VENUE_LAT_KEY,
@@ -29,7 +30,7 @@ const PASSPHRASE = "hawksflytogether";
 const SESSION_KEY = "admin_unlocked";
 
 const KEYS = [
-  STREAM_URL_KEY, CHANNEL_ID_KEY, YOUTUBE_API_KEY_KEY,
+  STREAM_URL_KEY, CHANNEL_ID_KEY, YOUTUBE_API_KEY_KEY, YOUTUBE_PLAYLIST_ID_KEY,
   VENUE_NAME_KEY, VENUE_ADDRESS_KEY, VENUE_LAT_KEY, VENUE_LON_KEY,
   SCORE_ENABLED_KEY, SCORE_HOME_TEAM_KEY, SCORE_AWAY_TEAM_KEY,
   SCORE_HOME_SCORE_KEY, SCORE_AWAY_SCORE_KEY, SCORE_STATUS_KEY,
@@ -56,6 +57,7 @@ const Admin = () => {
     streamUrl:        "",
     channelId:        "",
     youtubeApiKey:    "",
+    youtubePlaylistId:"",
     venueName:        "",
     venueAddress:     "",
     venueLat:         "",
@@ -84,6 +86,7 @@ const Admin = () => {
           streamUrl:      map[STREAM_URL_KEY]       ?? "",
           channelId:      map[CHANNEL_ID_KEY]       ?? "",
           youtubeApiKey:  map[YOUTUBE_API_KEY_KEY]  ?? "",
+          youtubePlaylistId: map[YOUTUBE_PLAYLIST_ID_KEY] ?? "",
           venueName:      map[VENUE_NAME_KEY]       ?? "",
           venueAddress:   map[VENUE_ADDRESS_KEY]    ?? "",
           venueLat:       map[VENUE_LAT_KEY]        ?? "",
@@ -107,6 +110,7 @@ const Admin = () => {
       { key: STREAM_URL_KEY,      value: next.streamUrl      },
       { key: CHANNEL_ID_KEY,      value: next.channelId      },
       { key: YOUTUBE_API_KEY_KEY, value: next.youtubeApiKey  },
+      { key: YOUTUBE_PLAYLIST_ID_KEY, value: next.youtubePlaylistId },
       { key: VENUE_NAME_KEY,      value: next.venueName      },
       { key: VENUE_ADDRESS_KEY,   value: next.venueAddress   },
       { key: VENUE_LAT_KEY,       value: next.venueLat       },
