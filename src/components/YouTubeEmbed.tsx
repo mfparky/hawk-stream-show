@@ -20,7 +20,7 @@ const extractVideoId = (url: string): string | null => {
   return null;
 };
 
-const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
+const YouTubeEmbed = ({ url, emptyState }: YouTubeEmbedProps) => {
   const videoId = extractVideoId(url);
   const [isPlaying, setIsPlaying] = useState(false);
   const [embedBlocked, setEmbedBlocked] = useState(false);
