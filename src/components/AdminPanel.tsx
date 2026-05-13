@@ -8,6 +8,7 @@ export interface AdminSettings {
   streamUrl:        string;
   channelId:        string;
   youtubeApiKey:    string;
+  youtubePlaylistId:string;
   venueName:        string;
   venueAddress:     string;
   venueLat:         string;
@@ -228,6 +229,15 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               When Channel ID and API Key are set, the live stream is detected automatically
               every 60 s. A manual URL above takes priority.
             </p>
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              Past Games Playlist ID
+              <span className="ml-1.5 font-normal text-xs">(shown when no stream is live)</span>
+            </label>
+            <Input
+              value={draft.youtubePlaylistId}
+              onChange={set("youtubePlaylistId")}
+              placeholder="PLxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
           </section>
 
           {/* ── Venue ── */}
