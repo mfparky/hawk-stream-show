@@ -38,7 +38,7 @@ stream shows up on the site and is forwarded to YouTube + GameChanger.
    | Field           | Value                                      |
    | --------------- | ------------------------------------------ |
    | **Name**        | e.g. `Hawk relay`                          |
-   | **RTMP URL**    | `rtmp://<DROPLET_IP>:1935/live`            |
+   | **RTMP URL**    | `rtmp://138.197.140.107:1935/live`            |
    | **Stream Key**  | anything non-empty, e.g. `mevo`            |
    | **Username**    | leave blank                                |
    | **Password**    | leave blank                                |
@@ -94,11 +94,11 @@ Tap **End broadcast** in the Mevo app. Within a few seconds:
 
 | Symptom on `/relay`                         | Likely cause / fix                                                                 |
 | ------------------------------------------- | ---------------------------------------------------------------------------------- |
-| **Source: No input** after Go Live          | Wrong RTMP URL in Mevo, or port 1935 blocked. Check `<DROPLET_IP>` and firewall.   |
+| **Source: No input** after Go Live          | Wrong RTMP URL in Mevo, or port 1935 blocked. Check `138.197.140.107` and firewall.   |
 | Source green, **YouTube** red               | YouTube stream key in `rtmp-relay/.env` (`DEST1`) is wrong/expired. Rotate it.     |
 | Source green, **GameChanger** red           | Game not started in GameChanger, or `DEST2` URL/key stale. Re-grab from GC app.    |
 | Bitrate flapping / "Source" pulsing offline | Weak uplink. Lower Mevo bitrate, or move closer to the hotspot/router.             |
-| `/relay` shows "Relay server not configured"| Set the stats URL once: `http://<DROPLET_IP>:8080/stat` in the **Relay server URL** panel. |
+| `/relay` shows "Relay server not configured"| Set the stats URL once: `http://138.197.140.107:8080/stat` in the **Relay server URL** panel. |
 | Page shows OFFLINE but Mevo says live       | The stats-pusher container probably crashed. `docker compose ps` on the relay host. |
 
 ## Rotating the YouTube key
@@ -138,15 +138,16 @@ Tap the **broadcast** button → **Streaming Destination** → **Custom RTMP**
 | Field          | Value                                  |
 | -------------- | -------------------------------------- |
 | **Name**       | `Hawk relay`                           |
-| **RTMP URL**   | `rtmp://<DROPLET_IP>:1935/live`        |
+| **RTMP URL**   | `rtmp://138.197.140.107:1935/live`        |
 | **Stream Key** | `mevo` *(any non-empty string)*        |
 | **Username**   | *(blank)*                              |
 | **Password**   | *(blank)*                              |
 
 Save, then make sure **Hawk relay** is the selected destination.
 
-> `<DROPLET_IP>` is the same IP shown on `https://streamthehawks.ca/relay`
-> under **Relay server URL** — change the port from `8080` to `1935`.
+> Note the port: Mevo uses **`:1935`** for ingest. The `/relay` page's
+> *Relay server URL* (`:8080/stat`) is a different port on the same
+> droplet — don't paste that one into Mevo.
 
 ### 3. Encoding settings (gear icon on the broadcast sheet)
 
