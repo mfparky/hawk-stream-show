@@ -1,4 +1,6 @@
 export const STREAM_URL_KEY     = "stream_url";
+export const STREAM_AUTO_URL_KEY     = "stream_auto_url";
+export const STREAM_AUTO_EXPIRES_KEY = "stream_auto_expires_at";
 export const CHANNEL_ID_KEY     = "youtube_channel_id";
 export const YOUTUBE_API_KEY_KEY = "youtube_api_key";
 export const YOUTUBE_PLAYLIST_ID_KEY = "youtube_playlist_id";

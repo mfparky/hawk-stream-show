@@ -11,8 +11,8 @@ import SponsorWall from "@/components/SponsorWall";
 import PastGamesPlaylist from "@/components/PastGamesPlaylist";
 import ViewerNameModal from "@/components/ViewerNameModal";
 import WelcomeBanner from "@/components/WelcomeBanner";
+import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
-import { useYouTubeLive } from "@/hooks/useYouTubeLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
 import { useGCSync } from "@/hooks/useGCSync";
@@ -28,11 +28,7 @@ const Index = () => {
   // Falls back silently if the widget HTML doesn't match any known pattern.
   useGCSync(score.enabled);
 
-  // Auto-detect the live stream from the YouTube channel when no manual URL is set
-  const autoVideoId  = useYouTubeLive(streamUrl ? null : venue.channelId, venue.youtubeApiKey);
-  const autoUrl      = autoVideoId ? `https://www.youtube.com/watch?v=${autoVideoId}` : "";
-
-  const activeUrl    = streamUrl || autoUrl;
+  const activeUrl    = streamUrl;
   const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
 
   // When a past game is selected, play it inline where the stream would be
@@ -56,6 +52,9 @@ const Index = () => {
 
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
         <YouTubeEmbed url={playerUrl} />
+
+        {/* Manual live-stream check — user-initiated to save API quota */}
+        {!activeUrl && <CheckLiveStreamButton channelId={venue.channelId} />}
 
         {/* Past games playlist — shown under the player */}
         {!activeUrl && (
