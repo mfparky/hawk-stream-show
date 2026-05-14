@@ -47,7 +47,9 @@ const Index = () => {
       <main className="mx-auto max-w-6xl px-3 py-4 space-y-4 sm:px-4 md:px-6">
         {/* Welcome banner */}
         {viewer && <WelcomeBanner firstName={viewer.firstName} />}
-  const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
+        {/* Scoreboard — shown above video when enabled by admin */}
+        <ScoreboardWidget />
+
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
         <YouTubeEmbed url={playerUrl} />
 
