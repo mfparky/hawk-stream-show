@@ -107,3 +107,65 @@ docker compose up -d --force-recreate rtmp-relay
 
 GameChanger keys live in the GameChanger app under **Streaming** — same
 flow, update `DEST2` and recreate.
+
+---
+
+## Appendix — Quick setup card for a new phone
+
+Hand this page to whoever's running camera. Assumes the droplet is already
+configured (someone else owns the YouTube + GameChanger keys in `.env`).
+
+### 1. Install + sign in
+
+- App: **Mevo Multicam** (iOS / Android)
+- Sign in with the team's Mevo account (must be **Mevo Plus / Pro** — Custom
+  RTMP is a paid feature)
+- Pair the camera once over Bluetooth, then connect via the camera's Wi-Fi or
+  a shared hotspot
+
+### 2. Add the Custom RTMP destination
+
+Broadcast sheet → **+ Add destination** → **Custom RTMP**:
+
+| Field          | Value                                  |
+| -------------- | -------------------------------------- |
+| **Name**       | `Hawk relay`                           |
+| **RTMP URL**   | `rtmp://<DROPLET_IP>:1935/live`        |
+| **Stream Key** | `mevo` *(any non-empty string)*        |
+| **Username**   | *(blank)*                              |
+| **Password**   | *(blank)*                              |
+
+> `<DROPLET_IP>` is the same IP shown on the site's `/relay` page under
+> **Relay server URL** — change the port from `8080` to `1935`.
+
+### 3. Encoding settings (gear icon on the broadcast sheet)
+
+| Setting    | Value                                       |
+| ---------- | ------------------------------------------- |
+| Resolution | **1080p** *(720p on weak LTE)*              |
+| Frame rate | **30 fps**                                  |
+| Bitrate    | **4–6 Mbps**                                |
+| Keyframe   | **2 s**                                     |
+| Audio      | AAC, 128 kbps *(Mevo default — leave it)*   |
+
+### 4. Turn OFF other destinations
+
+In the broadcast sheet, make sure **only "Hawk relay"** is toggled on.
+Disable any direct YouTube / Facebook / GameChanger destinations on the
+phone — the relay is what fans the single Mevo feed out to YouTube and
+GameChanger. Pushing direct *and* via relay doubles the upload bandwidth
+for no benefit.
+
+### 5. Go-live checklist
+
+1. Tap **Go Live** in Mevo.
+2. Open `https://<your-site>/relay` on a laptop or second phone.
+3. Within ~5 s all three dots should be green:
+   - **Source** → Mevo connected
+   - **YouTube** → relay pushing to YT
+   - **GameChanger** → relay pushing to GC
+4. In **YouTube Studio → Live Control Room**, click the blue **GO LIVE**
+   button once the preview shows your feed.
+5. The home page auto-embeds within ~30 s.
+
+If any dot stays red, see the **Troubleshooting** table earlier in this doc.
