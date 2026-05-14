@@ -7,11 +7,14 @@ interface PlaylistItem {
   publishedAt: string;
 }
 
-async function fetchPlaylistItems(playlistId: string, apiKey: string): Promise<PlaylistItem[]> {
-  const url =
-    `https://www.googleapis.com/youtube/v3/playlistItems` +
-    `?part=snippet&maxResults=25&playlistId=${encodeURIComponent(playlistId)}&key=${apiKey}`;
-  const res = await fetch(url);
+async function fetchPlaylistItems(playlistId: string): Promise<PlaylistItem[]> {
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-proxy?action=playlist&playlistId=${encodeURIComponent(playlistId)}`;
+  const res = await fetch(url, {
+    headers: {
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+  });
   if (!res.ok) {
     console.error("[PastGamesPlaylist] API error", res.status, await res.text().catch(() => ""));
     return [];
@@ -47,10 +50,10 @@ interface Props {
 }
 
 const PastGamesPlaylist = ({ playlistId, apiKey, onSelect, activeVideoId }: Props) => {
-  const enabled = !!playlistId && !!apiKey;
+  const enabled = !!playlistId;
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["yt-playlist", playlistId],
-    queryFn: () => fetchPlaylistItems(playlistId!, apiKey!),
+    queryFn: () => fetchPlaylistItems(playlistId!),
     enabled,
     staleTime: 10 * 60_000,
   });
