@@ -28,11 +28,7 @@ const Index = () => {
   // Falls back silently if the widget HTML doesn't match any known pattern.
   useGCSync(score.enabled);
 
-  // Auto-detect the live stream from the YouTube channel when no manual URL is set
-  const autoVideoId  = useYouTubeLive(streamUrl ? null : venue.channelId, venue.youtubeApiKey);
-  const autoUrl      = autoVideoId ? `https://www.youtube.com/watch?v=${autoVideoId}` : "";
-
-  const activeUrl    = streamUrl || autoUrl;
+  const activeUrl    = streamUrl;
   const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
 
   // When a past game is selected, play it inline where the stream would be
