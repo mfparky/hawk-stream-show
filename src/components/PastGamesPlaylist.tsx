@@ -50,10 +50,10 @@ interface Props {
 }
 
 const PastGamesPlaylist = ({ playlistId, apiKey, onSelect, activeVideoId }: Props) => {
-  const enabled = !!playlistId && !!apiKey;
+  const enabled = !!playlistId;
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["yt-playlist", playlistId],
-    queryFn: () => fetchPlaylistItems(playlistId!, apiKey!),
+    queryFn: () => fetchPlaylistItems(playlistId!),
     enabled,
     staleTime: 10 * 60_000,
   });
