@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 /**
  * Polls every 60 s for the active live stream on a YouTube channel.
@@ -7,11 +6,6 @@ import { supabase } from "@/lib/supabase";
  * referrer-restricted Google API endpoints directly.
  */
 async function fetchLiveVideoId(channelId: string): Promise<string | null> {
-  const { data, error } = await supabase.functions.invoke("youtube-proxy", {
-    method: "GET",
-  } as never).catch(() => ({ data: null, error: "invoke-failed" } as const));
-
-  // supabase.functions.invoke does not pass query params; use fetch directly.
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-proxy?action=live&channelId=${encodeURIComponent(channelId)}`;
   const res = await fetch(url, {
     headers: {
