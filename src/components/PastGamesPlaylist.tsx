@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase";
 
 interface PlaylistItem {
   videoId: string;
@@ -8,11 +9,11 @@ interface PlaylistItem {
 }
 
 async function fetchPlaylistItems(playlistId: string): Promise<PlaylistItem[]> {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-proxy?action=playlist&playlistId=${encodeURIComponent(playlistId)}`;
+  const url = `${SUPABASE_URL}/functions/v1/youtube-proxy?action=playlist&playlistId=${encodeURIComponent(playlistId)}`;
   const res = await fetch(url, {
     headers: {
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
   });
   if (!res.ok) {

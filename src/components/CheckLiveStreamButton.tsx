@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, supabase } from "@/lib/supabase";
 import { STREAM_AUTO_URL_KEY, STREAM_AUTO_EXPIRES_KEY } from "@/lib/constants";
 import { toast } from "@/components/ui/use-toast";
 
@@ -34,11 +34,11 @@ const CheckLiveStreamButton = ({ channelId }: Props) => {
     setLoading(true);
     localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-proxy?action=live&channelId=${encodeURIComponent(channelId)}`;
+      const url = `${SUPABASE_URL}/functions/v1/youtube-proxy?action=live&channelId=${encodeURIComponent(channelId)}`;
       const res = await fetch(url, {
         headers: {
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
       });
       if (!res.ok) throw new Error(`Proxy ${res.status}`);
