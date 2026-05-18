@@ -53,6 +53,9 @@ const Index = () => {
         {/* Scoreboard — shown above video when enabled by admin */}
         <ScoreboardWidget />
 
+        {/* Countdown to next scheduled game */}
+        <NextGameCountdown />
+
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
         <YouTubeEmbed url={playerUrl} nextGameAt={nextGameAt} />
 
