@@ -13,6 +13,7 @@ import ViewerNameModal from "@/components/ViewerNameModal";
 import WelcomeBanner from "@/components/WelcomeBanner";
 import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
+import { useNextGameTime } from "@/hooks/useNextGameTime";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
 import { useGCSync } from "@/hooks/useGCSync";
@@ -22,6 +23,7 @@ const Index = () => {
   const streamUrl    = useStreamUrl();
   const venue        = useVenueSettings();
   const score        = useScoreSettings();
+  const nextGameAt   = useNextGameTime();
   const { viewer, register, loading: viewerLoading, needsPrompt } = useViewer();
 
   // Auto-sync scores from the GameChanger widget DOM when the scoreboard is enabled.
@@ -51,7 +53,7 @@ const Index = () => {
         <ScoreboardWidget />
 
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
-        <YouTubeEmbed url={playerUrl} />
+        <YouTubeEmbed url={playerUrl} nextGameAt={nextGameAt} />
 
         {/* Manual live-stream check — user-initiated to save API quota */}
         {!activeUrl && <CheckLiveStreamButton channelId={venue.channelId} />}
