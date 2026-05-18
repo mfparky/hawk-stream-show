@@ -53,7 +53,7 @@ const Index = () => {
         <ScoreboardWidget />
 
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
-        <YouTubeEmbed url={playerUrl} />
+        <YouTubeEmbed url={playerUrl} nextGameAt={nextGameAt} />
 
         {/* Manual live-stream check — user-initiated to save API quota */}
         {!activeUrl && <CheckLiveStreamButton channelId={venue.channelId} />}
