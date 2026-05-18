@@ -2,7 +2,30 @@ import { useEffect, useState } from "react";
 
 interface YouTubeEmbedProps {
   url: string;
+  nextGameAt?: Date | null;
 }
+
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+const Countdown = ({ target }: { target: Date }) => {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = target.getTime() - now;
+  if (diff <= 0) return <>any moment now…</>;
+  return <>in {formatCountdown(diff)}</>;
+};
 
 const extractVideoId = (url: string): string | null => {
   if (!url) return null;
