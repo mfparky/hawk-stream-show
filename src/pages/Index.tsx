@@ -12,6 +12,7 @@ import PastGamesPlaylist from "@/components/PastGamesPlaylist";
 import ViewerNameModal from "@/components/ViewerNameModal";
 import WelcomeBanner from "@/components/WelcomeBanner";
 import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
+import NextGameCountdown from "@/components/NextGameCountdown";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useNextGameTime } from "@/hooks/useNextGameTime";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
@@ -51,6 +52,9 @@ const Index = () => {
         {viewer && <WelcomeBanner firstName={viewer.firstName} />}
         {/* Scoreboard — shown above video when enabled by admin */}
         <ScoreboardWidget />
+
+        {/* Countdown to next scheduled game */}
+        <NextGameCountdown />
 
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
         <YouTubeEmbed url={playerUrl} nextGameAt={nextGameAt} />
