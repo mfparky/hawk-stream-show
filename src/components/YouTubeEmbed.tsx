@@ -42,7 +42,7 @@ const extractVideoId = (url: string): string | null => {
   return null;
 };
 
-const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
+const YouTubeEmbed = ({ url, nextGameAt }: YouTubeEmbedProps) => {
   const videoId = extractVideoId(url);
   const [isPlaying, setIsPlaying] = useState(false);
   const [embedBlocked, setEmbedBlocked] = useState(false);
@@ -75,10 +75,19 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
   const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 
   if (!videoId) {
+    const showCountdown = nextGameAt && nextGameAt.getTime() > Date.now();
     return (
       <div className="flex aspect-[32/9] w-full items-center justify-center rounded-lg border border-border bg-muted/30 px-6 text-center">
         <p className="text-muted-foreground text-lg sm:text-xl md:text-2xl font-semibold">
-          No stream currently available.<br />Please check again closer to game time.
+          {showCountdown ? (
+            <>
+              Next live stream <Countdown target={nextGameAt!} />
+            </>
+          ) : (
+            <>
+              No stream currently available.<br />Please check again closer to game time.
+            </>
+          )}
         </p>
       </div>
     );
