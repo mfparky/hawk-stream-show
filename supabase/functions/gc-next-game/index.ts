@@ -99,16 +99,26 @@ Deno.serve(async (req) => {
       url.searchParams.get("teamUrl") ??
       "https://web.gc.com/teams/Ifp5ZNyiRQsa";
 
-    const res = await fetch(teamUrl, {
+    const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
+    if (!apiKey) throw new Error("FIRECRAWL_API_KEY not configured");
+
+    const fc = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; HawksStreamBot/1.0; +https://streamthehawks.ca)",
-        Accept: "text/html",
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        url: teamUrl,
+        formats: ["markdown"],
+        onlyMainContent: true,
+      }),
     });
-    if (!res.ok) throw new Error(`GC fetch ${res.status}`);
-    const html = await res.text();
-    const text = stripTags(html);
+    if (!fc.ok) throw new Error(`Firecrawl ${fc.status}`);
+    const fcJson = await fc.json();
+    const markdown: string =
+      fcJson?.data?.markdown ?? fcJson?.markdown ?? "";
+    const text = stripTags(markdown);
     const games = parseSchedule(text);
     const now = Date.now();
     let next: (Game & { startsAt: string; startsAtMs: number }) | null = null;
