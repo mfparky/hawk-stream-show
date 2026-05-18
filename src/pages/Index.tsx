@@ -23,6 +23,7 @@ const Index = () => {
   const streamUrl    = useStreamUrl();
   const venue        = useVenueSettings();
   const score        = useScoreSettings();
+  const nextGameAt   = useNextGameTime();
   const { viewer, register, loading: viewerLoading, needsPrompt } = useViewer();
 
   // Auto-sync scores from the GameChanger widget DOM when the scoreboard is enabled.
