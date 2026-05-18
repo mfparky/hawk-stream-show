@@ -13,6 +13,7 @@ import ViewerNameModal from "@/components/ViewerNameModal";
 import WelcomeBanner from "@/components/WelcomeBanner";
 import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
+import { useNextGameTime } from "@/hooks/useNextGameTime";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
 import { useGCSync } from "@/hooks/useGCSync";
