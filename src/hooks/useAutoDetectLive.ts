@@ -8,7 +8,7 @@ const POLL_MS = 90_000; // 90s
 const PRE_GAME_MS = 20 * 60 * 1000;
 const POST_GAME_MS = 4 * 60 * 60 * 1000;
 // Fallback when no scheduled game is known: poll if user is on page (light cadence).
-const FALLBACK_POLL_MS = 5 * 60 * 1000; // 5 min
+const FALLBACK_POLL_MS = 60 * 60 * 1000; // 1 hour
 
 /**
  * Automatically detects a YouTube live stream and writes it to settings so
