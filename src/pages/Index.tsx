@@ -35,6 +35,9 @@ const Index = () => {
   const activeUrl    = streamUrl;
   const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
 
+  // Auto-detect a live YouTube stream so visitors don't have to click the button.
+  useAutoDetectLive(venue.channelId, !!activeUrl, nextGameAt);
+
   // When a past game is selected, play it inline where the stream would be
   const [selectedPastVideoId, setSelectedPastVideoId] = useState<string | null>(null);
   // Clear past-game selection if a real stream becomes available
