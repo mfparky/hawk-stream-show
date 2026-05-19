@@ -15,6 +15,7 @@ import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
 import NextGameCountdown from "@/components/NextGameCountdown";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useNextGameTime } from "@/hooks/useNextGameTime";
+import { useAutoDetectLive } from "@/hooks/useAutoDetectLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
 import { useGCSync } from "@/hooks/useGCSync";
@@ -33,6 +34,9 @@ const Index = () => {
 
   const activeUrl    = streamUrl;
   const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
+
+  // Auto-detect a live YouTube stream so visitors don't have to click the button.
+  useAutoDetectLive(venue.channelId, !!activeUrl, nextGameAt);
 
   // When a past game is selected, play it inline where the stream would be
   const [selectedPastVideoId, setSelectedPastVideoId] = useState<string | null>(null);
