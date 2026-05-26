@@ -139,12 +139,20 @@ const Relay = () => {
             <span className="text-sm">Back</span>
           </Link>
           <span className="text-sm font-semibold">Stream Monitor</span>
-          <button
-            onClick={refetch}
-            className="flex items-center gap-1 text-xs text-muted-foreground active:text-foreground transition-colors"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/setup"
+              className="text-xs text-muted-foreground active:text-foreground transition-colors"
+            >
+              Setup
+            </Link>
+            <button
+              onClick={refetch}
+              className="flex items-center gap-1 text-xs text-muted-foreground active:text-foreground transition-colors"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
       </header>
 

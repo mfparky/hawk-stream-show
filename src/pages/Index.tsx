@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Settings, Radio } from "lucide-react";
 import Header from "@/components/Header";
 import GameChangerWidget from "@/components/GameChangerWidget";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
@@ -106,7 +106,14 @@ const Index = () => {
         {/* Sponsor logo wall — at bottom when stream is active */}
         {!!activeUrl && <SponsorWall />}
 
-        <div className="flex justify-center pb-4">
+        <div className="flex justify-center gap-4 pb-4">
+          <Link
+            to="/setup"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+          >
+            <Radio className="h-3 w-3" />
+            Stream setup
+          </Link>
           <Link
             to="/admin"
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
