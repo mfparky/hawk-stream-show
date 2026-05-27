@@ -23,8 +23,13 @@ const Unit = ({ value, label }: { value: string | number; label: string }) => (
   </div>
 );
 
-const NextGameCountdown = () => {
-  const next = useNextGameTime();
+interface Props {
+  nextGameAt?: Date | null;
+}
+
+const NextGameCountdown = ({ nextGameAt }: Props) => {
+  const fallback = useNextGameTime();
+  const next = nextGameAt ?? fallback;
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
