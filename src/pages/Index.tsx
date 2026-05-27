@@ -15,6 +15,7 @@ import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
 import NextGameCountdown from "@/components/NextGameCountdown";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useNextGameTime } from "@/hooks/useNextGameTime";
+import { useNextGameFromWidget } from "@/hooks/useNextGameFromWidget";
 import { useAutoDetectLive } from "@/hooks/useAutoDetectLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
