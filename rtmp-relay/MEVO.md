@@ -125,6 +125,61 @@ day-to-day — just use `/admin`.
 
 ---
 
+## Stream-down push alerts (recommended)
+
+Get a push notification on your phone within ~30 s of YouTube or
+GameChanger dropping mid-game — no need to babysit `/relay`.
+
+How it works: `stats-pusher` on the droplet already polls the relay's
+`/stat` every 5 s. When it sees the source connected but a push
+destination missing for more than `ALERT_DELAY_SEC` (default 30), it
+sends a push via [ntfy.sh](https://ntfy.sh) — a free public push relay.
+When the destination recovers, you get a "stream recovered" notification.
+
+### One-time setup
+
+1. Install **ntfy** on your phone — iOS App Store / Google Play, free.
+2. In the app, tap **+** → **Subscribe to topic** → pick a name only you
+   know, e.g. `hawks-stream-jx7q9kp`. **The topic name is the auth** —
+   anyone who guesses it can spam you, so use random letters/digits.
+3. On the droplet, add the topic name to `rtmp-relay/.env`:
+
+   ```sh
+   NTFY_TOPIC=hawks-stream-jx7q9kp
+   ```
+
+4. Restart `stats-pusher`:
+
+   ```sh
+   docker compose up -d --force-recreate stats-pusher
+   ```
+
+5. Confirm `docker compose logs stats-pusher` shows
+   `stats-pusher starting… (alerts: on)`.
+
+### Testing the alert
+
+While Mevo is broadcasting, briefly change `dest_gc_url` in `/admin` to
+something invalid (e.g., add a `Z` to the host) and save. Within
+~30 s + 15 s (alert delay + watcher poll) you should get a push that
+says "One push destination dropped". Restore the URL and you should get
+a recovery push within another minute.
+
+### Tuning
+
+| Env var               | Default | What it does                                                        |
+| --------------------- | ------- | ------------------------------------------------------------------- |
+| `NTFY_TOPIC`          | (empty) | Topic to publish to. Empty = alerts disabled.                       |
+| `EXPECTED_PUSH_COUNT` | `2`     | How many push destinations should be alive (YouTube + GC = 2).      |
+| `ALERT_DELAY_SEC`     | `30`    | Seconds the stream must stay degraded before alerting.              |
+| `RELAY_LINK`          | `/relay`| URL opened when you tap the notification.                           |
+
+If you ever stream with only one destination configured, set
+`EXPECTED_PUSH_COUNT=1` so the second-destination-not-connected isn't
+treated as an outage.
+
+---
+
 ## Appendix — Quick setup card for a new phone
 
 Hand this page to whoever's running camera. Assumes the droplet is already
