@@ -111,7 +111,9 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         url: teamUrl,
         formats: ["markdown"],
-        onlyMainContent: true,
+        onlyMainContent: false,
+        waitFor: 5000,
+        maxAge: 0,
       }),
     });
     if (!fc.ok) throw new Error(`Firecrawl ${fc.status}`);
