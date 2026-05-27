@@ -15,6 +15,7 @@ import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
 import NextGameCountdown from "@/components/NextGameCountdown";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
 import { useNextGameTime } from "@/hooks/useNextGameTime";
+import { useNextGameFromWidget } from "@/hooks/useNextGameFromWidget";
 import { useAutoDetectLive } from "@/hooks/useAutoDetectLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
@@ -25,7 +26,9 @@ const Index = () => {
   const streamUrl    = useStreamUrl();
   const venue        = useVenueSettings();
   const score        = useScoreSettings();
-  const nextGameAt   = useNextGameTime();
+  const nextFromServer = useNextGameTime();
+  const nextFromWidget = useNextGameFromWidget();
+  const nextGameAt   = nextFromWidget ?? nextFromServer;
   const { viewer, register, loading: viewerLoading, needsPrompt } = useViewer();
 
   // Auto-sync scores from the GameChanger widget DOM when the scoreboard is enabled.
@@ -58,7 +61,7 @@ const Index = () => {
         <ScoreboardWidget />
 
         {/* Countdown to next scheduled game */}
-        <NextGameCountdown />
+        <NextGameCountdown nextGameAt={nextGameAt} />
 
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
         <YouTubeEmbed url={playerUrl} nextGameAt={nextGameAt} />
