@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, Check, AlertCircle, Loader2, MapPin, Minus, Plus } from "lucide-react";
+import {
+  ChevronDown, Check, AlertCircle, Loader2, MapPin, Minus, Plus,
+  Youtube, Trophy, Wrench, Radio, ExternalLink,
+} from "lucide-react";
+import { useRtmpStats } from "@/hooks/useRtmpStats";
+import { useToast } from "@/hooks/use-toast";
 
 export interface AdminSettings {
   streamUrl:        string;
@@ -30,27 +37,20 @@ export interface AdminSettings {
 
 interface AdminPanelProps {
   settings: AdminSettings;
-  onSave: (settings: AdminSettings) => Promise<void>;
+  onSave:   (partial: Partial<AdminSettings>) => Promise<void>;
 }
 
-interface GeoResult {
-  lat: string;
-  lon: string;
-  display_name: string;
-}
+interface GeoResult { lat: string; lon: string; display_name: string }
 
 async function searchAddress(query: string): Promise<GeoResult[]> {
   try {
     const params = new URLSearchParams({
-      format: "json",
-      limit: "5",
-      q: query,
-      countrycodes: "ca",
-      addressdetails: "1",
+      format: "json", limit: "5", q: query,
+      countrycodes: "ca", addressdetails: "1",
     });
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?${params}`,
-      { headers: { "User-Agent": "LovableApp/1.0" } }
+      { headers: { "User-Agent": "LovableApp/1.0" } },
     );
     return await res.json();
   } catch {
@@ -58,22 +58,106 @@ async function searchAddress(query: string): Promise<GeoResult[]> {
   }
 }
 
-const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
-  const [draft, setDraft]   = useState<AdminSettings>(settings);
-  const [saved, setSaved]   = useState(false);
+// ── Status pill: one of three colors based on connection state ────────────
+function StatusDot({ on, label }: { on: boolean; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+      <span
+        className={`h-3 w-3 rounded-full shrink-0 ${
+          on ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-muted-foreground/30"
+        }`}
+        aria-hidden
+      />
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate max-w-full">
+        {label}
+      </span>
+    </div>
+  );
+}
 
-  // Sync draft when settings load from Supabase (the initial state is empty
-  // while the async fetch is in flight, so draft needs to catch up once data arrives).
-  useEffect(() => {
-    setDraft(settings);
-  }, [settings]);
+function StatusBar() {
+  const { stats, statsUrl } = useRtmpStats();
+  const src   = !!stats?.srcConnected;
+  const yt    = (stats?.pushCount ?? 0) >= 1;
+  const gc    = (stats?.pushCount ?? 0) >= 2;
+  const live  = src && yt && gc;
+
+  if (!statsUrl) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-card/50 p-3 text-center text-xs text-muted-foreground">
+        Live status not available — set the relay URL once on{" "}
+        <a href="/relay" className="underline">/relay</a>.
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-lg border p-3 ${live ? "border-green-500/40 bg-green-500/5" : "border-border bg-card"}`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Live status
+        </span>
+        <span className={`text-[11px] font-bold tabular-nums ${live ? "text-green-500" : "text-muted-foreground"}`}>
+          {live ? "● LIVE" : "○ OFFLINE"}
+        </span>
+      </div>
+      <div className="flex items-stretch gap-1.5">
+        <StatusDot on={src} label="Mevo" />
+        <div className="flex items-center text-muted-foreground text-xs">→</div>
+        <StatusDot on={src} label="Relay" />
+        <div className="flex items-center text-muted-foreground text-xs">→</div>
+        <StatusDot on={yt} label="YouTube" />
+        <StatusDot on={gc} label="GC" />
+      </div>
+    </div>
+  );
+}
+
+// ── Reusable labeled input ────────────────────────────────────────────────
+function Field({
+  label, hint, value, onChange, placeholder, mono,
+}: {
+  label: string; hint?: string;
+  value: string; onChange: React.ChangeEventHandler<HTMLInputElement>;
+  placeholder?: string; mono?: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+        {label}
+        {hint && <span className="ml-1.5 font-normal text-xs">{hint}</span>}
+      </label>
+      <Input
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={mono ? "font-mono text-sm" : ""}
+      />
+    </div>
+  );
+}
+
+const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
+  const { toast } = useToast();
+  const [draft, setDraft] = useState<AdminSettings>(settings);
+
+  // Sync when initial load lands from Supabase
+  useEffect(() => { setDraft(settings); }, [settings]);
+
   const [addrErr, setAddrErr] = useState(false);
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<GeoResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [selectedDisplay, setSelectedDisplay] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const wrapperRef  = useRef<HTMLDivElement>(null);
+
+  const [savingDest,  setSavingDest]  = useState(false);
+  const [savedDest,   setSavedDest]   = useState(false);
+  const [savingScore, setSavingScore] = useState(false);
+  const [savedScore,  setSavedScore]  = useState(false);
+  const [savingSetup, setSavingSetup] = useState(false);
+  const [savedSetup,  setSavedSetup]  = useState(false);
 
   const set = (field: keyof AdminSettings) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,13 +168,11 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
       }
     };
 
-  // Debounced address search
+  // ── Address autocomplete ────────────────────────────────────────────────
   useEffect(() => {
     const query = draft.venueAddress.trim();
     if (query.length < 3 || selectedDisplay) {
-      setResults([]);
-      setShowResults(false);
-      return;
+      setResults([]); setShowResults(false); return;
     }
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -104,7 +186,6 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
     return () => clearTimeout(debounceRef.current);
   }, [draft.venueAddress, selectedDisplay]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
@@ -116,367 +197,413 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   }, []);
 
   const selectResult = (r: GeoResult) => {
-    setDraft((prev) => ({
-      ...prev,
-      venueAddress: r.display_name,
-      venueLat: r.lat,
-      venueLon: r.lon,
+    setDraft((p) => ({
+      ...p,
+      venueAddress: r.display_name, venueLat: r.lat, venueLon: r.lon,
     }));
     setSelectedDisplay(r.display_name);
     setShowResults(false);
     setAddrErr(false);
   };
 
-  const handleSave = async () => {
-    await onSave(draft);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // ── Partial-save helpers (each saves ONLY its own fields) ───────────────
+  const saveDestinations = async () => {
+    setSavingDest(true);
+    try {
+      await onSave({
+        destYoutubeUrl: draft.destYoutubeUrl,
+        destYoutubeKey: draft.destYoutubeKey,
+        destGcUrl:      draft.destGcUrl,
+        destGcKey:      draft.destGcKey,
+      });
+      setSavedDest(true);
+      toast({ description: "Destinations saved — relay reloads within ~15 s." });
+      setTimeout(() => setSavedDest(false), 2500);
+    } finally {
+      setSavingDest(false);
+    }
   };
 
   const adjustScore = async (field: "scoreHomeScore" | "scoreAwayScore", delta: number) => {
     const current = parseInt(draft[field] || "0", 10) || 0;
-    const next = Math.max(0, current + delta);
-    const nextDraft = { ...draft, [field]: String(next) };
-    setDraft(nextDraft);
-    await onSave(nextDraft);
+    const next    = Math.max(0, current + delta);
+    setDraft((p) => ({ ...p, [field]: String(next) }));
+    // Save ONLY this field — never persist any unsaved destination draft alongside.
+    await onSave({ [field]: String(next) });
   };
 
   const toggleScoreEnabled = async (enabled: boolean) => {
-    const nextDraft = { ...draft, scoreEnabled: enabled ? "true" : "false" };
-    setDraft(nextDraft);
-    await onSave(nextDraft);
+    const v = enabled ? "true" : "false";
+    setDraft((p) => ({ ...p, scoreEnabled: v }));
+    await onSave({ scoreEnabled: v });
   };
 
+  const saveScoreboard = async () => {
+    setSavingScore(true);
+    try {
+      await onSave({
+        scoreEnabled:   draft.scoreEnabled,
+        scoreHomeTeam:  draft.scoreHomeTeam,
+        scoreAwayTeam:  draft.scoreAwayTeam,
+        scoreHomeScore: draft.scoreHomeScore,
+        scoreAwayScore: draft.scoreAwayScore,
+        scoreStatus:    draft.scoreStatus,
+      });
+      setSavedScore(true);
+      toast({ description: "Scoreboard saved." });
+      setTimeout(() => setSavedScore(false), 2000);
+    } finally {
+      setSavingScore(false);
+    }
+  };
+
+  const saveSetup = async () => {
+    setSavingSetup(true);
+    try {
+      await onSave({
+        streamUrl:        draft.streamUrl,
+        channelId:        draft.channelId,
+        youtubeApiKey:    draft.youtubeApiKey,
+        youtubePlaylistId:draft.youtubePlaylistId,
+        venueName:        draft.venueName,
+        venueAddress:     draft.venueAddress,
+        venueLat:         draft.venueLat,
+        venueLon:         draft.venueLon,
+        rtmpIngestUrl:    draft.rtmpIngestUrl,
+        rtmpStreamKey:    draft.rtmpStreamKey,
+        youtubeStudioUrl: draft.youtubeStudioUrl,
+      });
+      setSavedSetup(true);
+      toast({ description: "Setup saved." });
+      setTimeout(() => setSavedSetup(false), 2000);
+    } finally {
+      setSavingSetup(false);
+    }
+  };
+
+  const ytStudio = draft.youtubeStudioUrl || "https://studio.youtube.com";
+
   return (
-    <Collapsible defaultOpen>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-5 py-3 text-muted-foreground transition-colors hover:text-foreground">
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <Settings className="h-4 w-4" />
-          Admin
-        </span>
-        <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-      </CollapsibleTrigger>
+    <div className="space-y-4">
+      {/* ── Live status bar ── */}
+      <StatusBar />
 
-      <CollapsibleContent>
-        <div className="mt-2 rounded-lg border border-border bg-card p-3 sm:p-5 space-y-3 sm:space-y-5">
+      {/* ──────── 1. PUSH DESTINATIONS (game-day primary) ──────── */}
+      <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <Radio className="h-4 w-4 text-primary" />
+            Stream destinations
+          </h2>
+          <a
+            href={ytStudio}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          >
+            YouTube Studio <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Paste fresh keys before each broadcast. Saves go live on the relay within ~15 s.
+        </p>
 
-          {/* ── Operator / Mevo setup — first so it's easy to find ── */}
-          <section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Operator Setup
-            </p>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Mevo RTMP credentials for the camera operator.
-            </p>
-            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              Mevo RTMP Server URL
-            </label>
-            <Input
-              value={draft.rtmpIngestUrl}
-              onChange={set("rtmpIngestUrl")}
-              placeholder="rtmp://138.197.140.107/live"
-              className="font-mono text-sm"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              Mevo Stream Key
-            </label>
-            <Input
-              value={draft.rtmpStreamKey}
-              onChange={set("rtmpStreamKey")}
-              placeholder="02610026"
-              className="font-mono text-sm"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              YouTube Studio URL
-              <span className="ml-1.5 font-normal text-xs">(for one-tap link in monitor)</span>
-            </label>
-            <Input
-              value={draft.youtubeStudioUrl}
-              onChange={set("youtubeStudioUrl")}
-              placeholder="https://studio.youtube.com/..."
-            />
-          </section>
+        {/* YouTube */}
+        <div className="rounded-md border border-border/60 bg-muted/30 p-3 sm:p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Youtube className="h-4 w-4 text-red-500" />
+            <span className="text-sm font-semibold">YouTube</span>
+          </div>
+          <Field
+            label="Stream URL"
+            value={draft.destYoutubeUrl}
+            onChange={set("destYoutubeUrl")}
+            placeholder="rtmp://a.rtmp.youtube.com/live2"
+            mono
+          />
+          <Field
+            label="Stream Key"
+            hint="(rotates per broadcast — copy from Studio → Go Live)"
+            value={draft.destYoutubeKey}
+            onChange={set("destYoutubeKey")}
+            placeholder="xxxx-xxxx-xxxx-xxxx-xxxx"
+            mono
+          />
+        </div>
 
-          {/* ── Push Destinations ── */}
-          <section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Push Destinations
-            </p>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Where the relay forwards the Mevo stream. The droplet watches these
-              and reloads within 15 s of saving — no SSH needed. Rotate the
-              GameChanger fields before each new game.
-            </p>
+        {/* GameChanger */}
+        <div className="rounded-md border border-border/60 bg-muted/30 p-3 sm:p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-amber-500" />
+            <span className="text-sm font-semibold">GameChanger</span>
+            <span className="ml-auto text-[10px] uppercase tracking-wider rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 font-semibold">
+              Per game
+            </span>
+          </div>
+          <Field
+            label="Stream URL"
+            value={draft.destGcUrl}
+            onChange={set("destGcUrl")}
+            placeholder="rtmp://stream.gc.com/live"
+            mono
+          />
+          <Field
+            label="Stream Key"
+            hint="(per-game — GC app → today's game → Stream → Use external software)"
+            value={draft.destGcKey}
+            onChange={set("destGcKey")}
+            placeholder="game-specific key"
+            mono
+          />
+        </div>
 
-            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              YouTube Stream URL
-            </label>
-            <Input
-              value={draft.destYoutubeUrl}
-              onChange={set("destYoutubeUrl")}
-              placeholder="rtmp://a.rtmp.youtube.com/live2"
-              className="font-mono text-sm"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              YouTube Stream Key
-            </label>
-            <Input
-              value={draft.destYoutubeKey}
-              onChange={set("destYoutubeKey")}
-              placeholder="xxxx-xxxx-xxxx-xxxx-xxxx"
-              className="font-mono text-sm"
-            />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              From YouTube Studio → Go Live → Stream tab.
-            </p>
+        <Button
+          onClick={saveDestinations}
+          disabled={savingDest}
+          className="w-full h-11 gap-1.5 text-base font-semibold"
+        >
+          {savingDest ? <Loader2 className="h-4 w-4 animate-spin" /> :
+           savedDest  ? <Check className="h-4 w-4" /> : null}
+          {savedDest ? "Saved — relay reloading…" : "Save destinations"}
+        </Button>
+      </section>
 
-            <label className="mt-4 mb-1.5 block text-sm font-medium text-muted-foreground">
-              GameChanger Stream URL
-            </label>
-            <Input
-              value={draft.destGcUrl}
-              onChange={set("destGcUrl")}
-              placeholder="rtmp://stream.gc.com/live"
-              className="font-mono text-sm"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              GameChanger Stream Key
-              <span className="ml-1.5 font-normal text-xs">(per-game — update before each game)</span>
-            </label>
-            <Input
-              value={draft.destGcKey}
-              onChange={set("destGcKey")}
-              placeholder="game-specific key"
-              className="font-mono text-sm"
-            />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              From the GameChanger app on today's game → Stream → Use external software.
-            </p>
-          </section>
+      {/* ──────── 2. LIVE SCOREBOARD ──────── */}
+      <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
+        <h2 className="text-base font-bold flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-primary" />
+          Live scoreboard
+        </h2>
 
-          {/* ── Stream ── */}
-          <section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Stream
-            </p>
-            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              YouTube Live Stream URL
-              <span className="ml-1.5 font-normal text-xs">(manual override)</span>
-            </label>
-            <Input
-              value={draft.streamUrl}
-              onChange={set("streamUrl")}
-              placeholder="https://www.youtube.com/watch?v=..."
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              YouTube Channel ID
-              <span className="ml-1.5 font-normal text-xs">(for auto-detection)</span>
-            </label>
-            <Input
-              value={draft.channelId}
-              onChange={set("channelId")}
-              placeholder="UCxxxxxxxxxxxxxxxxxxxxxxxx"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              YouTube Data API Key
-              <span className="ml-1.5 font-normal text-xs">(required for auto-detection)</span>
-            </label>
-            <Input
-              value={draft.youtubeApiKey}
-              onChange={set("youtubeApiKey")}
-              placeholder="AIza..."
-            />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              When Channel ID and API Key are set, the live stream is detected automatically
-              every 60 s. A manual URL above takes priority.
-            </p>
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              Past Games Playlist ID
-              <span className="ml-1.5 font-normal text-xs">(shown when no stream is live)</span>
-            </label>
-            <Input
-              value={draft.youtubePlaylistId}
-              onChange={set("youtubePlaylistId")}
-              placeholder="PLxxxxxxxxxxxxxxxxxxxxxxxx"
-            />
-          </section>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={draft.scoreEnabled === "true"}
+            onChange={(e) => toggleScoreEnabled(e.target.checked)}
+            className="h-4 w-4 rounded accent-primary border-border"
+          />
+          <span className="text-sm font-medium">
+            Show scoreboard above the live stream
+          </span>
+        </label>
 
-          {/* ── Venue ── */}
-          <section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Venue
-            </p>
-            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              Venue Name
-            </label>
-            <Input
-              value={draft.venueName}
-              onChange={set("venueName")}
-              placeholder="Newmarket Baseball Stadium"
-            />
-            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
-              Address
-            </label>
-            <div className="relative" ref={wrapperRef}>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    value={draft.venueAddress}
-                    onChange={set("venueAddress")}
-                    placeholder="Start typing an address…"
-                    className={addrErr ? "border-destructive" : ""}
-                  />
-                  {searching && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Home team" value={draft.scoreHomeTeam} onChange={set("scoreHomeTeam")} placeholder="Hawks" />
+          <Field label="Away team" value={draft.scoreAwayTeam} onChange={set("scoreAwayTeam")} placeholder="Opponent" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">Home score</label>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => adjustScore("scoreHomeScore", -1)}
+                className="h-12 w-12 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent active:scale-95 transition">
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="flex-1 text-center text-2xl font-bold tabular-nums">
+                {draft.scoreHomeScore || "0"}
+              </span>
+              <button type="button" onClick={() => adjustScore("scoreHomeScore", 1)}
+                className="h-12 w-12 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent active:scale-95 transition">
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">Away score</label>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => adjustScore("scoreAwayScore", -1)}
+                className="h-12 w-12 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent active:scale-95 transition">
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="flex-1 text-center text-2xl font-bold tabular-nums">
+                {draft.scoreAwayScore || "0"}
+              </span>
+              <button type="button" onClick={() => adjustScore("scoreAwayScore", 1)}
+                className="h-12 w-12 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent active:scale-95 transition">
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <Field
+          label="Period / Status"
+          value={draft.scoreStatus}
+          onChange={set("scoreStatus")}
+          placeholder="e.g. Top 1st, Bottom 3rd, Final"
+        />
+
+        <Button
+          onClick={saveScoreboard}
+          disabled={savingScore}
+          variant="outline"
+          className="w-full gap-1.5"
+        >
+          {savingScore ? <Loader2 className="h-4 w-4 animate-spin" /> :
+           savedScore  ? <Check className="h-4 w-4" /> : null}
+          {savedScore ? "Saved" : "Save scoreboard (teams + period)"}
+        </Button>
+        <p className="text-[11px] text-muted-foreground text-center -mt-2">
+          Score +/- buttons save instantly.
+        </p>
+      </section>
+
+      {/* ──────── 3. ONE-TIME SETUP (collapsed) ──────── */}
+      <Collapsible>
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-5 py-3 text-muted-foreground transition-colors hover:text-foreground">
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <Wrench className="h-4 w-4" />
+            One-time setup
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+              Mevo · venue · auto-detect
+            </span>
+          </span>
+          <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="mt-2 rounded-lg border border-border bg-card p-4 sm:p-5 space-y-5">
+
+            {/* Mevo credentials */}
+            <section className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Mevo (camera operator)
+              </p>
+              <Field
+                label="Mevo RTMP Server URL"
+                value={draft.rtmpIngestUrl}
+                onChange={set("rtmpIngestUrl")}
+                placeholder="rtmp://138.197.140.107/live"
+                mono
+              />
+              <Field
+                label="Mevo Stream Key"
+                value={draft.rtmpStreamKey}
+                onChange={set("rtmpStreamKey")}
+                placeholder="mevo"
+                mono
+              />
+              <Field
+                label="YouTube Studio URL"
+                hint="(one-tap link in monitor)"
+                value={draft.youtubeStudioUrl}
+                onChange={set("youtubeStudioUrl")}
+                placeholder="https://studio.youtube.com/..."
+              />
+            </section>
+
+            {/* YouTube auto-detect */}
+            <section className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                YouTube auto-detect
+              </p>
+              <Field
+                label="YouTube Live Stream URL"
+                hint="(manual override)"
+                value={draft.streamUrl}
+                onChange={set("streamUrl")}
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+              <Field
+                label="YouTube Channel ID"
+                hint="(for auto-detection)"
+                value={draft.channelId}
+                onChange={set("channelId")}
+                placeholder="UCxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
+              <Field
+                label="YouTube Data API Key"
+                hint="(required for auto-detection)"
+                value={draft.youtubeApiKey}
+                onChange={set("youtubeApiKey")}
+                placeholder="AIza..."
+              />
+              <p className="text-xs text-muted-foreground">
+                When Channel ID + API Key are set, the live stream is detected every 60 s. A manual URL above takes priority.
+              </p>
+              <Field
+                label="Past Games Playlist ID"
+                hint="(shown when no stream is live)"
+                value={draft.youtubePlaylistId}
+                onChange={set("youtubePlaylistId")}
+                placeholder="PLxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
+            </section>
+
+            {/* Venue */}
+            <section className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Venue
+              </p>
+              <Field
+                label="Venue name"
+                value={draft.venueName}
+                onChange={set("venueName")}
+                placeholder="Newmarket Baseball Stadium"
+              />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">Address</label>
+                <div className="relative" ref={wrapperRef}>
+                  <div className="relative flex-1">
+                    <Input
+                      value={draft.venueAddress}
+                      onChange={set("venueAddress")}
+                      placeholder="Start typing an address…"
+                      className={addrErr ? "border-destructive" : ""}
+                    />
+                    {searching && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {showResults && results.length > 0 && (
+                    <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                      {results.map((r, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+                          onClick={() => selectResult(r)}
+                        >
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="text-foreground leading-snug">{r.display_name}</span>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
+                {selectedDisplay && (
+                  <p className="mt-1.5 text-xs text-primary flex items-center gap-1">
+                    <Check className="h-3 w-3" /> Selected
+                  </p>
+                )}
+                {draft.venueLat && draft.venueLon && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Coordinates: {draft.venueLat}, {draft.venueLon}
+                  </p>
+                )}
+                {addrErr && !showResults && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    No results found. Try a different search.
+                  </div>
+                )}
               </div>
+            </section>
 
-              {/* Results dropdown */}
-              {showResults && results.length > 0 && (
-                <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
-                  {results.map((r, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
-                      onClick={() => selectResult(r)}
-                    >
-                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="text-foreground leading-snug">{r.display_name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {selectedDisplay && (
-              <p className="mt-1.5 text-xs text-primary flex items-center gap-1">
-                <Check className="h-3 w-3" /> Selected
-              </p>
-            )}
-            {draft.venueLat && draft.venueLon && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Coordinates: {draft.venueLat}, {draft.venueLon}
-              </p>
-            )}
-            {addrErr && !showResults && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-destructive">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                No results found. Try a different search.
-              </div>
-            )}
-          </section>
-
-          {/* ── Live Score ── */}
-          <section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Live Score
-            </p>
-
-            <label className="flex items-center gap-2 cursor-pointer mb-4">
-              <input
-                type="checkbox"
-                checked={draft.scoreEnabled === "true"}
-                onChange={(e) => toggleScoreEnabled(e.target.checked)}
-                className="h-4 w-4 rounded accent-primary border-border"
-              />
-              <span className="text-sm font-medium text-muted-foreground">
-                Show scoreboard above stream
-              </span>
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                  Home Team
-                </label>
-                <Input
-                  value={draft.scoreHomeTeam}
-                  onChange={set("scoreHomeTeam")}
-                  placeholder="Hawks"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                  Away Team
-                </label>
-                <Input
-                  value={draft.scoreAwayTeam}
-                  onChange={set("scoreAwayTeam")}
-                  placeholder="Opponent"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                  Home Score
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => adjustScore("scoreHomeScore", -1)}
-                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="flex-1 text-center text-lg font-bold tabular-nums">
-                    {draft.scoreHomeScore || "0"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => adjustScore("scoreHomeScore", 1)}
-                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                  Away Score
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => adjustScore("scoreAwayScore", -1)}
-                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="flex-1 text-center text-lg font-bold tabular-nums">
-                    {draft.scoreAwayScore || "0"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => adjustScore("scoreAwayScore", 1)}
-                    className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 rounded-md border border-border flex items-center justify-center hover:bg-accent transition-colors"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              Period / Status
-            </label>
-            <Input
-              value={draft.scoreStatus}
-              onChange={set("scoreStatus")}
-              placeholder="e.g. Q3, Halftime, Final, 5th Inning"
-            />
-          </section>
-
-          <Button onClick={handleSave} className="gap-1.5">
-            {saved && <Check className="h-4 w-4" />}
-            {saved ? "Saved" : "Save all settings"}
-          </Button>
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+            <Button
+              onClick={saveSetup}
+              disabled={savingSetup}
+              className="w-full gap-1.5"
+            >
+              {savingSetup ? <Loader2 className="h-4 w-4 animate-spin" /> :
+               savedSetup  ? <Check className="h-4 w-4" /> : null}
+              {savedSetup ? "Saved" : "Save setup"}
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 };
 
