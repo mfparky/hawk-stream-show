@@ -22,6 +22,10 @@ export interface AdminSettings {
   rtmpIngestUrl:    string;
   rtmpStreamKey:    string;
   youtubeStudioUrl: string;
+  destYoutubeUrl:   string;
+  destYoutubeKey:   string;
+  destGcUrl:        string;
+  destGcKey:        string;
 }
 
 interface AdminPanelProps {
@@ -191,6 +195,63 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
               onChange={set("youtubeStudioUrl")}
               placeholder="https://studio.youtube.com/..."
             />
+          </section>
+
+          {/* ── Push Destinations ── */}
+          <section>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Push Destinations
+            </p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Where the relay forwards the Mevo stream. The droplet watches these
+              and reloads within 15 s of saving — no SSH needed. Rotate the
+              GameChanger fields before each new game.
+            </p>
+
+            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              YouTube Stream URL
+            </label>
+            <Input
+              value={draft.destYoutubeUrl}
+              onChange={set("destYoutubeUrl")}
+              placeholder="rtmp://a.rtmp.youtube.com/live2"
+              className="font-mono text-sm"
+            />
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              YouTube Stream Key
+            </label>
+            <Input
+              value={draft.destYoutubeKey}
+              onChange={set("destYoutubeKey")}
+              placeholder="xxxx-xxxx-xxxx-xxxx-xxxx"
+              className="font-mono text-sm"
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              From YouTube Studio → Go Live → Stream tab.
+            </p>
+
+            <label className="mt-4 mb-1.5 block text-sm font-medium text-muted-foreground">
+              GameChanger Stream URL
+            </label>
+            <Input
+              value={draft.destGcUrl}
+              onChange={set("destGcUrl")}
+              placeholder="rtmp://stream.gc.com/live"
+              className="font-mono text-sm"
+            />
+            <label className="mt-3 mb-1.5 block text-sm font-medium text-muted-foreground">
+              GameChanger Stream Key
+              <span className="ml-1.5 font-normal text-xs">(per-game — update before each game)</span>
+            </label>
+            <Input
+              value={draft.destGcKey}
+              onChange={set("destGcKey")}
+              placeholder="game-specific key"
+              className="font-mono text-sm"
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              From the GameChanger app on today's game → Stream → Use external software.
+            </p>
           </section>
 
           {/* ── Stream ── */}

@@ -20,6 +20,10 @@ import {
   RTMP_INGEST_URL_KEY,
   RTMP_STREAM_KEY_KEY,
   YOUTUBE_STUDIO_URL_KEY,
+  DEST_YOUTUBE_URL_KEY,
+  DEST_YOUTUBE_STREAM_KEY,
+  DEST_GC_URL_KEY,
+  DEST_GC_STREAM_KEY,
 } from "@/lib/constants";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Radio } from "lucide-react";
@@ -35,6 +39,7 @@ const KEYS = [
   SCORE_ENABLED_KEY, SCORE_HOME_TEAM_KEY, SCORE_AWAY_TEAM_KEY,
   SCORE_HOME_SCORE_KEY, SCORE_AWAY_SCORE_KEY, SCORE_STATUS_KEY,
   RTMP_INGEST_URL_KEY, RTMP_STREAM_KEY_KEY, YOUTUBE_STUDIO_URL_KEY,
+  DEST_YOUTUBE_URL_KEY, DEST_YOUTUBE_STREAM_KEY, DEST_GC_URL_KEY, DEST_GC_STREAM_KEY,
 ];
 
 const Admin = () => {
@@ -71,6 +76,10 @@ const Admin = () => {
     rtmpIngestUrl:    "",
     rtmpStreamKey:    "",
     youtubeStudioUrl: "",
+    destYoutubeUrl:   "",
+    destYoutubeKey:   "",
+    destGcUrl:        "",
+    destGcKey:        "",
   });
 
   useEffect(() => {
@@ -100,6 +109,10 @@ const Admin = () => {
           rtmpIngestUrl:    map[RTMP_INGEST_URL_KEY]     ?? "",
           rtmpStreamKey:    map[RTMP_STREAM_KEY_KEY]     ?? "",
           youtubeStudioUrl: map[YOUTUBE_STUDIO_URL_KEY]  ?? "",
+          destYoutubeUrl:   map[DEST_YOUTUBE_URL_KEY]    ?? "",
+          destYoutubeKey:   map[DEST_YOUTUBE_STREAM_KEY] ?? "",
+          destGcUrl:        map[DEST_GC_URL_KEY]         ?? "",
+          destGcKey:        map[DEST_GC_STREAM_KEY]      ?? "",
         });
       });
   }, [unlocked]);
@@ -124,6 +137,10 @@ const Admin = () => {
       { key: RTMP_INGEST_URL_KEY,    value: next.rtmpIngestUrl    },
       { key: RTMP_STREAM_KEY_KEY,    value: next.rtmpStreamKey    },
       { key: YOUTUBE_STUDIO_URL_KEY, value: next.youtubeStudioUrl },
+      { key: DEST_YOUTUBE_URL_KEY,    value: next.destYoutubeUrl   },
+      { key: DEST_YOUTUBE_STREAM_KEY, value: next.destYoutubeKey   },
+      { key: DEST_GC_URL_KEY,         value: next.destGcUrl        },
+      { key: DEST_GC_STREAM_KEY,      value: next.destGcKey        },
     ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
 
     await supabase.from("settings").upsert(rows);

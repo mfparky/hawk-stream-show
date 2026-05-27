@@ -11,6 +11,14 @@ export const RTMP_INGEST_URL_KEY  = "rtmp_ingest_url";
 export const RTMP_STREAM_KEY_KEY  = "rtmp_stream_key";
 export const YOUTUBE_STUDIO_URL_KEY = "youtube_studio_url";
 
+// Outbound push destinations on the relay. The droplet watcher polls these
+// every 15s and reloads nginx when they change, so /admin can rotate the
+// YouTube key and per-game GameChanger key without SSH'ing to the droplet.
+export const DEST_YOUTUBE_URL_KEY    = "dest_youtube_url";
+export const DEST_YOUTUBE_STREAM_KEY = "dest_youtube_stream_key";
+export const DEST_GC_URL_KEY         = "dest_gc_url";
+export const DEST_GC_STREAM_KEY      = "dest_gc_stream_key";
+
 export const SCORE_ENABLED_KEY    = "score_enabled";
 export const SCORE_HOME_TEAM_KEY  = "score_home_team";
 export const SCORE_AWAY_TEAM_KEY  = "score_away_team";

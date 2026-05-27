@@ -1,16 +1,16 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-    apt-get install -y nginx libnginx-mod-rtmp gettext-base && \
+    apt-get install -y nginx libnginx-mod-rtmp python3 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY nginx.conf.template     /etc/nginx/nginx.conf.template
+COPY destination-watcher.py  /destination-watcher.py
+COPY entrypoint.sh           /entrypoint.sh
+RUN chmod +x /entrypoint.sh /destination-watcher.py
 
 EXPOSE 1935 8080
 
-# Substitute env vars into the config at startup, then run nginx
-CMD ["/bin/sh", "-c", \
-  "envsubst '${DEST1}${DEST2}' \
-   < /etc/nginx/nginx.conf.template \
-   > /etc/nginx/nginx.conf && \
-   nginx -g 'daemon off;'"]
+# entrypoint.sh renders nginx.conf, starts the Supabase-polling watcher in the
+# background, then execs nginx in the foreground.
+CMD ["/entrypoint.sh"]
