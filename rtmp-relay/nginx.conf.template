@@ -15,9 +15,9 @@ rtmp {
             live on;
             record off;
 
-            # Push to both destinations simultaneously
-            push ${DEST1};
-            push ${DEST2};
+            # Push destinations are written here by destination-watcher.py at boot
+            # and re-rendered + `nginx -s reload`'d when /admin changes them.
+# __DEST_LINES__
         }
     }
 }

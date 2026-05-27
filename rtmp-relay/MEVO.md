@@ -95,24 +95,33 @@ Tap **End broadcast** in the Mevo app. Within a few seconds:
 | Symptom on `/relay`                         | Likely cause / fix                                                                 |
 | ------------------------------------------- | ---------------------------------------------------------------------------------- |
 | **Source: No input** after Go Live          | Wrong RTMP URL in Mevo, or port 1935 blocked. Check `138.197.140.107` and firewall.   |
-| Source green, **YouTube** red               | YouTube stream key in `rtmp-relay/.env` (`DEST1`) is wrong/expired. Rotate it.     |
-| Source green, **GameChanger** red           | Game not started in GameChanger, or `DEST2` URL/key stale. Re-grab from GC app.    |
+| Source green, **YouTube** red               | YouTube key expired. Update it in `/admin` → Push Destinations (relay reloads in ~15s). |
+| Source green, **GameChanger** red           | New game in GameChanger has a fresh key. Update GC URL + Key in `/admin`.          |
 | Bitrate flapping / "Source" pulsing offline | Weak uplink. Lower Mevo bitrate, or move closer to the hotspot/router.             |
 | `/relay` shows "Relay server not configured"| Set the stats URL once: `http://138.197.140.107:8080/stat` in the **Relay server URL** panel. |
 | Page shows OFFLINE but Mevo says live       | The stats-pusher container probably crashed. `docker compose ps` on the relay host. |
 
-## Rotating the YouTube key
+## Rotating destination keys (no SSH)
 
-YouTube keys can be regenerated from **YouTube Studio → Go Live → Stream
-settings**. After rotating, update `DEST1` in `rtmp-relay/.env` and
-restart the relay:
+Both the YouTube key and the per-game GameChanger key are managed from
+`https://streamthehawks.ca/admin` → **Push Destinations**. The droplet
+runs a watcher process (`destination-watcher.py`) that polls Supabase
+every 15 s and runs `nginx -s reload` whenever the values change — a
+graceful reload, so it won't interrupt an active Mevo stream.
 
-```sh
-docker compose up -d --force-recreate rtmp-relay
-```
+Typical flow before each game:
 
-GameChanger keys live in the GameChanger app under **Streaming** — same
-flow, update `DEST2` and recreate.
+1. In the GameChanger app, start today's game → **Stream** →
+   **Use external software** → copy the URL and key.
+2. On your phone, open `/admin`, scroll to **Push Destinations**, paste
+   into **GameChanger Stream URL** and **GameChanger Stream Key**, tap
+   **Save**.
+3. Within ~15 s the relay picks up the new key — you'll see the
+   **GameChanger** push count tick on `/relay`.
+
+The fields in `.env` (`DEST1`, `DEST2`) are only used as bootstrap
+fallback if Supabase is unreachable at boot. Don't bother updating them
+day-to-day — just use `/admin`.
 
 ---
 

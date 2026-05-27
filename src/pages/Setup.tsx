@@ -285,17 +285,18 @@ const Setup = () => {
               <div>
                 <p className="font-semibold">YouTube dot red, Source green</p>
                 <p className="text-muted-foreground">
-                  The YouTube stream key on the droplet is stale — ask whoever
-                  manages the droplet to rotate <code className="font-mono">DEST1</code>{" "}
-                  in <code className="font-mono">rtmp-relay/.env</code>.
+                  YouTube key expired. Open <Link to="/admin" className="underline">/admin</Link>{" "}
+                  → <strong>Push Destinations</strong> → paste a fresh key from
+                  YouTube Studio → Save. The relay reloads within ~15 s.
                 </p>
               </div>
               <div>
                 <p className="font-semibold">GameChanger dot red, Source green</p>
                 <p className="text-muted-foreground">
-                  Either today's game hasn't been started in the GameChanger app, or
-                  the per-game key on the droplet (<code className="font-mono">DEST2</code>)
-                  needs to be refreshed from the GC app.
+                  Each new GC game has its own key. In the GC app → today's game →
+                  Stream → <strong>Use external software</strong> → copy URL + key
+                  → paste into <Link to="/admin" className="underline">/admin</Link>{" "}
+                  → Push Destinations → Save.
                 </p>
               </div>
               <div>
