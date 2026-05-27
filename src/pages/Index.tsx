@@ -61,7 +61,7 @@ const Index = () => {
         <ScoreboardWidget />
 
         {/* Countdown to next scheduled game */}
-        <NextGameCountdown />
+        <NextGameCountdown nextGameAt={nextGameAt} />
 
         {/* Live Stream — hero, full width (also plays selected past games inline) */}
         <YouTubeEmbed url={playerUrl} nextGameAt={nextGameAt} />
