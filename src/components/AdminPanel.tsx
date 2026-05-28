@@ -285,25 +285,35 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
 
   const [testingAlert, setTestingAlert] = useState(false);
   const testAlert = async () => {
-    if (!draft.ntfyTopic.trim()) {
-      toast({
-        description: "Set a topic name first, then save.",
-        variant: "destructive",
-      });
+    const topic = draft.ntfyTopic.trim();
+    if (!topic) {
+      toast({ description: "Set a topic name first, then save.", variant: "destructive" });
       return;
     }
     setTestingAlert(true);
     try {
-      const res = await fetch(`https://ntfy.sh/${draft.ntfyTopic.trim()}`, {
-        method: "POST",
-        body: "Test alert from /admin — if you're seeing this on your phone, alerts are set up correctly.",
-        headers: { "Title": "Hawks stream — test", "Priority": "default", "Tags": "test_tube" },
+      // Use URL query params (not custom headers) so the browser doesn't fire
+      // a CORS preflight on Title/Tags — keeps the request a "simple" POST.
+      const params = new URLSearchParams({
+        title: "Hawks stream — test",
+        tags:  "test_tube",
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(
+        `https://ntfy.sh/${encodeURIComponent(topic)}?${params.toString()}`,
+        {
+          method: "POST",
+          body: "Test alert from /admin — if you see this on your phone, alerts are set up correctly.",
+        },
+      );
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}${detail ? `: ${detail.slice(0, 120)}` : ""}`);
+      }
       toast({ description: "Test sent. Check your phone — should arrive within a few seconds." });
     } catch (e) {
+      console.error("ntfy test push failed:", e);
       toast({
-        description: e instanceof Error ? `Failed: ${e.message}` : "Failed",
+        description: e instanceof Error ? `Failed: ${e.message}` : "Failed — see browser console.",
         variant: "destructive",
       });
     } finally {
