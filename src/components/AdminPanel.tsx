@@ -6,10 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   ChevronDown, Check, AlertCircle, Loader2, MapPin, Minus, Plus,
-  Youtube, Trophy, Wrench, Radio, ExternalLink, Bell, Copy, ClipboardList,
+  Youtube, Trophy, Wrench, Radio, ExternalLink, Bell, Copy, ClipboardList, X,
 } from "lucide-react";
 import { useRtmpStats } from "@/hooks/useRtmpStats";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import {
+  STREAM_URL_KEY, STREAM_AUTO_URL_KEY, STREAM_AUTO_EXPIRES_KEY,
+} from "@/lib/constants";
 
 export interface AdminSettings {
   streamUrl:        string;
@@ -283,6 +287,24 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
     }
   };
 
+  const [clearingEmbed, setClearingEmbed] = useState(false);
+  const clearHomePageEmbed = async () => {
+    setClearingEmbed(true);
+    try {
+      const now = new Date().toISOString();
+      await supabase.from("settings").upsert([
+        { key: STREAM_URL_KEY,          value: "", updated_at: now },
+        { key: STREAM_AUTO_URL_KEY,     value: "", updated_at: now },
+        { key: STREAM_AUTO_EXPIRES_KEY, value: "", updated_at: now },
+      ]);
+      toast({ description: "Home-page embed cleared." });
+    } catch {
+      toast({ description: "Failed to clear — try again.", variant: "destructive" });
+    } finally {
+      setClearingEmbed(false);
+    }
+  };
+
   const [testingAlert, setTestingAlert] = useState(false);
   const testAlert = async () => {
     const topic = draft.ntfyTopic.trim();
@@ -327,6 +349,21 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
     <div className="space-y-4">
       {/* ── Live status bar ── */}
       <StatusBar />
+
+      {/* Manual override — clear the home-page embed if auto-clear is slow */}
+      <div className="flex justify-end -mt-2">
+        <Button
+          type="button"
+          onClick={clearHomePageEmbed}
+          disabled={clearingEmbed}
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive gap-1"
+        >
+          {clearingEmbed ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+          Clear home-page embed
+        </Button>
+      </div>
 
       {/* ──────── PRE-GAME CHECKLIST (accordion) ──────── */}
       <Collapsible>
