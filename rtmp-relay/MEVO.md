@@ -78,9 +78,14 @@ the bottleneck — drop to 720p / 3 Mbps.
    - **YouTube** and **GameChanger** dots should follow once the relay
      opens its push connections (usually 2–5 s later).
    - The big banner flips to **LIVE** with the incoming bitrate.
-4. `https://streamthehawks.ca` auto-detects the YouTube live broadcast and
-   embeds it once YouTube reports the stream as active (typically 10–30 s
-   after the relay starts pushing).
+4. In **YouTube Studio → Live**, confirm two things before fans can see it:
+   - Click the blue **GO LIVE** button. Without this, the relay is sending
+     bytes but YouTube isn't broadcasting them publicly.
+   - **Visibility = Public** (not Unlisted/Private). The home page uses the
+     public YouTube Data API and won't see Unlisted broadcasts.
+5. `https://streamthehawks.ca` auto-detects the YouTube live broadcast and
+   embeds it within ~30 s of step 4 (tap the **Check Live Stream** button
+   on the home page to force an immediate re-check).
 
 ## Stopping the stream
 
@@ -100,6 +105,7 @@ Tap **End broadcast** in the Mevo app. Within a few seconds:
 | Bitrate flapping / "Source" pulsing offline | Weak uplink. Lower Mevo bitrate, or move closer to the hotspot/router.             |
 | `/relay` shows "Relay server not configured"| Set the stats URL once: `http://138.197.140.107:8080/stat` in the **Relay server URL** panel. |
 | Page shows OFFLINE but Mevo says live       | The stats-pusher container probably crashed. `docker compose ps` on the relay host. |
+| YT relay green but home page doesn't embed  | Broadcast is set to **Unlisted/Private** in YouTube Studio. Flip to **Public** under Live → Settings → Visibility. Or the **GO LIVE** button wasn't clicked yet. |
 
 ## Rotating destination keys (no SSH)
 

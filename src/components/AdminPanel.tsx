@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   ChevronDown, Check, AlertCircle, Loader2, MapPin, Minus, Plus,
-  Youtube, Trophy, Wrench, Radio, ExternalLink,
+  Youtube, Trophy, Wrench, Radio, ExternalLink, Bell, Copy,
 } from "lucide-react";
 import { useRtmpStats } from "@/hooks/useRtmpStats";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,7 @@ export interface AdminSettings {
   destYoutubeKey:   string;
   destGcUrl:        string;
   destGcKey:        string;
+  ntfyTopic:        string;
 }
 
 interface AdminPanelProps {
@@ -272,12 +273,41 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
         rtmpIngestUrl:    draft.rtmpIngestUrl,
         rtmpStreamKey:    draft.rtmpStreamKey,
         youtubeStudioUrl: draft.youtubeStudioUrl,
+        ntfyTopic:        draft.ntfyTopic,
       });
       setSavedSetup(true);
       toast({ description: "Setup saved." });
       setTimeout(() => setSavedSetup(false), 2000);
     } finally {
       setSavingSetup(false);
+    }
+  };
+
+  const [testingAlert, setTestingAlert] = useState(false);
+  const testAlert = async () => {
+    if (!draft.ntfyTopic.trim()) {
+      toast({
+        description: "Set a topic name first, then save.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setTestingAlert(true);
+    try {
+      const res = await fetch(`https://ntfy.sh/${draft.ntfyTopic.trim()}`, {
+        method: "POST",
+        body: "Test alert from /admin — if you're seeing this on your phone, alerts are set up correctly.",
+        headers: { "Title": "Hawks stream — test", "Priority": "default", "Tags": "test_tube" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast({ description: "Test sent. Check your phone — should arrive within a few seconds." });
+    } catch (e) {
+      toast({
+        description: e instanceof Error ? `Failed: ${e.message}` : "Failed",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingAlert(false);
     }
   };
 
@@ -464,6 +494,113 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
 
         <CollapsibleContent>
           <div className="mt-2 rounded-lg border border-border bg-card p-4 sm:p-5 space-y-5">
+
+            {/* ── Outage alerts (ntfy) ── */}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                  <Bell className="h-3.5 w-3.5" />
+                  Outage alerts (ntfy)
+                </p>
+                {draft.ntfyTopic.trim() && (
+                  <span className="text-[10px] uppercase tracking-wider rounded-full bg-green-500/15 text-green-600 dark:text-green-400 px-2 py-0.5 font-semibold">
+                    On
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Get a phone push when YouTube or GameChanger drops mid-game. Each new admin
+                needs to install the <strong>ntfy</strong> app and subscribe to the topic below.
+              </p>
+
+              {/* Topic display */}
+              <Field
+                label="Topic name"
+                hint="(share with new admins so they can subscribe)"
+                value={draft.ntfyTopic}
+                onChange={set("ntfyTopic")}
+                placeholder="hawks_stream_outage_xxxx"
+                mono
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    if (!draft.ntfyTopic.trim()) return;
+                    try {
+                      await navigator.clipboard.writeText(draft.ntfyTopic.trim());
+                      toast({ description: "Topic copied — paste into the ntfy app." });
+                    } catch {
+                      toast({ description: "Couldn't copy — long-press the value to select.", variant: "destructive" });
+                    }
+                  }}
+                  disabled={!draft.ntfyTopic.trim()}
+                  className="gap-1.5"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy topic
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={testAlert}
+                  disabled={testingAlert || !draft.ntfyTopic.trim()}
+                  className="gap-1.5"
+                >
+                  {testingAlert ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                  Send test push
+                </Button>
+              </div>
+
+              {/* Steps for new admins */}
+              <div className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs space-y-2">
+                <p className="font-semibold text-foreground">New admin setup</p>
+                <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+                  <li>
+                    Install <strong>ntfy</strong> on your phone:{" "}
+                    <a
+                      href="https://apps.apple.com/us/app/ntfy/id1625396347"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-foreground"
+                    >
+                      App Store
+                    </a>{" "}
+                    /{" "}
+                    <a
+                      href="https://play.google.com/store/apps/details?id=io.heckel.ntfy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-foreground"
+                    >
+                      Play Store
+                    </a>
+                    .
+                  </li>
+                  <li>
+                    In the app, tap <strong>+</strong> → <strong>Subscribe to topic</strong>.
+                  </li>
+                  <li>
+                    Paste the topic name above and tap <strong>Subscribe</strong>.
+                  </li>
+                  <li>
+                    Back here, tap <strong>Send test push</strong> — confirm it lands within
+                    a few seconds.
+                  </li>
+                </ol>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Note: the droplet reads <code className="font-mono">NTFY_TOPIC</code> from{" "}
+                <code className="font-mono">rtmp-relay/.env</code>; the value here is just
+                shared with admins so they know what to subscribe to. To change which topic
+                the droplet pushes to, update <code className="font-mono">.env</code> and
+                restart <code className="font-mono">stats-pusher</code>.
+              </p>
+            </section>
 
             {/* Mevo credentials */}
             <section className="space-y-3">

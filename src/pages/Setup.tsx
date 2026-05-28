@@ -253,9 +253,15 @@ const Setup = () => {
                 Open YouTube Studio <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
               </a>
             </Button>
-            <p>
-              In Live Control Room → click the blue <strong>GO LIVE</strong> button.
-            </p>
+            <ul className="list-disc list-inside space-y-1 mt-1">
+              <li>
+                Confirm <strong>Visibility = Public</strong> in the broadcast settings.
+                Unlisted/Private won't be detected by the home page.
+              </li>
+              <li>
+                Click the blue <strong>GO LIVE</strong> button in the Live Control Room.
+              </li>
+            </ul>
           </Step>
 
           <Step n={5} title="Done">
@@ -302,10 +308,20 @@ const Setup = () => {
               <div>
                 <p className="font-semibold">YouTube embed never appears on the home page</p>
                 <p className="text-muted-foreground">
-                  Forgot to click the blue <strong>GO LIVE</strong> button in YouTube
-                  Studio. The relay can push bytes all day, but YouTube won't show
-                  the stream until the broadcast is started.
+                  Two most common causes, in order:
                 </p>
+                <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-1">
+                  <li>
+                    Broadcast <strong>Visibility = Unlisted/Private</strong>. The home
+                    page uses the public YouTube Data API and won't see Unlisted streams.
+                    Flip to <strong>Public</strong> in YouTube Studio → Live → Settings.
+                  </li>
+                  <li>
+                    Forgot to click the blue <strong>GO LIVE</strong> button in YouTube
+                    Studio. The relay can push bytes all day, but YouTube won't broadcast
+                    publicly until you confirm.
+                  </li>
+                </ul>
               </div>
             </div>
           </CollapsibleContent>
