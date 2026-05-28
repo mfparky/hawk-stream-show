@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   ChevronDown, Check, AlertCircle, Loader2, MapPin, Minus, Plus,
-  Youtube, Trophy, Wrench, Radio, ExternalLink, Bell, Copy,
+  Youtube, Trophy, Wrench, Radio, ExternalLink, Bell, Copy, ClipboardList,
 } from "lucide-react";
 import { useRtmpStats } from "@/hooks/useRtmpStats";
 import { useToast } from "@/hooks/use-toast";
@@ -317,6 +317,126 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
     <div className="space-y-4">
       {/* ── Live status bar ── */}
       <StatusBar />
+
+      {/* ──────── PRE-GAME CHECKLIST (accordion) ──────── */}
+      <Collapsible>
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-5 py-3 text-foreground transition-colors hover:bg-primary/10">
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            Before you go live — pre-game checklist
+          </span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-2 rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4 text-sm">
+            <p className="text-xs text-muted-foreground">
+              Run top-to-bottom before each game. ~5 minutes if everything goes right.
+            </p>
+
+            {[
+              {
+                title: "Power up the Mevo + confirm internet",
+                body: (
+                  <>
+                    Turn on the camera, wait for its status LED to go solid (connected) — not blinking
+                    (still searching for a network). Use the venue Wi-Fi if available, otherwise tether
+                    to the operator's phone hotspot.
+                  </>
+                ),
+              },
+              {
+                title: "Grab today's GameChanger key (RTMP, not RTMPS)",
+                body: (
+                  <>
+                    In the GameChanger app on the manager's device → today's game → <strong>Stream</strong>{" "}
+                    → <strong>Use external software</strong>. <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                    Tap "Switch to insecure ingest (RTMP)" at the bottom of that screen.</span>{" "}
+                    The relay can't push to <code className="font-mono">rtmps://</code> — only plain RTMP.
+                    Copy both <strong>Stream URL</strong> and <strong>Stream key</strong>.
+                  </>
+                ),
+              },
+              {
+                title: "Paste into Stream Destinations below",
+                body: (
+                  <>
+                    Scroll to the <strong>Stream destinations</strong> card below and paste into the
+                    GameChanger <strong>Stream URL</strong> + <strong>Stream Key</strong> fields. If the
+                    YouTube key rotated, paste the new one too. Tap <strong>Save destinations</strong>.
+                    Watch the status bar above — the GC dot turns green within ~15 s.
+                  </>
+                ),
+              },
+              {
+                title: "Start the YouTube broadcast",
+                body: (
+                  <>
+                    In YouTube Studio → Live, create or open the broadcast. Two things <em>before</em>{" "}
+                    clicking GO LIVE: (1) <strong>Visibility = Public</strong> (not Unlisted/Private —
+                    the home page can't see Unlisted). (2) Click the blue <strong>GO LIVE</strong> button.
+                  </>
+                ),
+              },
+              {
+                title: "Connect Mevo to the relay",
+                body: (
+                  <>
+                    In the Mevo app, tap the camera to connect → broadcast → <strong>Custom RTMP</strong>{" "}
+                    → <strong>Hawk relay</strong> (or paste values from{" "}
+                    <a href="/setup" className="underline">streamthehawks.ca/setup</a>). Tap the red{" "}
+                    <strong>Go Live</strong> button.
+                  </>
+                ),
+              },
+              {
+                title: "Verify all four dots are green",
+                body: (
+                  <>
+                    Scroll back up to the status bar. Mevo, Relay, YouTube, GC should all be green.
+                    Open <a href="/" className="underline">streamthehawks.ca</a> on a phone — the live
+                    embed appears within ~30 s. Tap <strong>Check Live Stream</strong> on the home page
+                    to force an immediate re-check if needed.
+                  </>
+                ),
+              },
+              {
+                title: "During the game — scoreboard",
+                body: (
+                  <>
+                    Use the <strong>Live scoreboard</strong> card below to enable the on-stream
+                    scoreboard and update home/away scores. The +/- buttons save instantly.
+                  </>
+                ),
+              },
+              {
+                title: "After the game",
+                body: (
+                  <>
+                    Tap <strong>End broadcast</strong> in Mevo, then end the broadcast in YouTube Studio
+                    (saves a VOD), then end the stream in the GC app. Disable the scoreboard if you want
+                    the home page to go quiet between games.
+                  </>
+                ),
+              },
+            ].map((step, i) => (
+              <div key={i} className="flex gap-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold tabular-nums">
+                  {i + 1}
+                </div>
+                <div className="flex-1 pt-0.5 min-w-0">
+                  <p className="font-semibold leading-snug">{step.title}</p>
+                  <div className="text-sm text-muted-foreground mt-1 leading-relaxed">{step.body}</div>
+                </div>
+              </div>
+            ))}
+
+            <p className="text-[11px] text-muted-foreground border-t border-border/60 pt-3">
+              Forgot a step? Common-failure shortcuts are in the{" "}
+              <a href="/setup" className="underline">streamthehawks.ca/setup</a> troubleshooting accordion.
+            </p>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* ──────── 1. PUSH DESTINATIONS (game-day primary) ──────── */}
       <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
