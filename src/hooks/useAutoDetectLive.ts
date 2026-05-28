@@ -3,7 +3,8 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, supabase } from "@/lib/supabase";
 import { STREAM_AUTO_URL_KEY, STREAM_AUTO_EXPIRES_KEY } from "@/lib/constants";
 
 const STREAM_TTL_MS = 2.5 * 60 * 60 * 1000;
-const POLL_MS = 90_000; // 90s
+const POLL_MS = 90_000;                       // 90s — catching the start of a stream
+const POST_DETECT_POLL_MS = 5 * 60 * 1000;    // 5min — once we have a stream, just watching for end
 // Auto-poll window: from 20 min before scheduled start to 4 hours after.
 const PRE_GAME_MS = 20 * 60 * 1000;
 const POST_GAME_MS = 4 * 60 * 60 * 1000;
@@ -26,7 +27,7 @@ export function useAutoDetectLive(
   const inFlight = useRef(false);
 
   useEffect(() => {
-    if (!channelId || hasActiveStream) return;
+    if (!channelId) return;
 
     const check = async () => {
       if (inFlight.current) return;
@@ -42,19 +43,36 @@ export function useAutoDetectLive(
         if (!res.ok) return;
         const json = await res.json();
         const videoId: string | null = json?.items?.[0]?.id?.videoId ?? null;
-        if (!videoId) return;
-        const streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const expiresAt = new Date(Date.now() + STREAM_TTL_MS).toISOString();
-        await supabase
-          .from("settings")
-          .upsert(
-            [
-              { key: STREAM_AUTO_URL_KEY, value: streamUrl },
-              { key: STREAM_AUTO_EXPIRES_KEY, value: expiresAt },
-            ],
-            { onConflict: "key" },
-          );
-        console.info("[useAutoDetectLive] Found live stream", videoId);
+
+        if (videoId) {
+          // Live stream found — set / refresh the URL + TTL.
+          const streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
+          const expiresAt = new Date(Date.now() + STREAM_TTL_MS).toISOString();
+          await supabase
+            .from("settings")
+            .upsert(
+              [
+                { key: STREAM_AUTO_URL_KEY,     value: streamUrl },
+                { key: STREAM_AUTO_EXPIRES_KEY, value: expiresAt },
+              ],
+              { onConflict: "key" },
+            );
+          console.info("[useAutoDetectLive] Found live stream", videoId);
+        } else if (hasActiveStream) {
+          // YouTube reports no live broadcast but we still have an auto URL
+          // showing — the stream ended. Clear it so the home page goes back to
+          // "no live stream" automatically instead of waiting for the 2.5h TTL.
+          await supabase
+            .from("settings")
+            .upsert(
+              [
+                { key: STREAM_AUTO_URL_KEY,     value: "" },
+                { key: STREAM_AUTO_EXPIRES_KEY, value: "" },
+              ],
+              { onConflict: "key" },
+            );
+          console.info("[useAutoDetectLive] Stream ended — cleared auto URL");
+        }
       } catch (e) {
         console.warn("[useAutoDetectLive] check failed", e);
       } finally {
@@ -69,9 +87,12 @@ export function useAutoDetectLive(
         !!startMs && now >= startMs - PRE_GAME_MS && now <= startMs + POST_GAME_MS;
       if (inGameWindow) {
         check();
-        return POLL_MS;
+        // Once we already have a live stream we're just watching for end-of-stream;
+        // slow the cadence to keep YouTube API quota healthy across long games.
+        return hasActiveStream ? POST_DETECT_POLL_MS : POLL_MS;
       }
-      // Out of window: only poll on a slow fallback cadence
+      // Out of window: light fallback (catches the rare "stream's still up well
+      // after the scheduled window" case so it eventually clears).
       check();
       return FALLBACK_POLL_MS;
     };
