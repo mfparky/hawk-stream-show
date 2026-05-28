@@ -21,6 +21,12 @@ export const DEST_YOUTUBE_STREAM_KEY = "dest_youtube_stream_key";
 export const DEST_GC_URL_KEY         = "dest_gc_url";
 export const DEST_GC_STREAM_KEY      = "dest_gc_stream_key";
 
+// ntfy.sh topic name for stream-down alerts. Shared with new admins so
+// they can subscribe in the ntfy app — separate from the droplet's
+// `NTFY_TOPIC` env var (the droplet is the source of truth for what gets
+// sent; this is just a place to share what to subscribe to).
+export const NTFY_TOPIC_KEY = "ntfy_topic";
+
 export const SCORE_ENABLED_KEY    = "score_enabled";
 export const SCORE_HOME_TEAM_KEY  = "score_home_team";
 export const SCORE_AWAY_TEAM_KEY  = "score_away_team";

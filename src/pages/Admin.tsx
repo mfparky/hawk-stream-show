@@ -24,6 +24,7 @@ import {
   DEST_YOUTUBE_STREAM_KEY,
   DEST_GC_URL_KEY,
   DEST_GC_STREAM_KEY,
+  NTFY_TOPIC_KEY,
 } from "@/lib/constants";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Radio } from "lucide-react";
@@ -40,6 +41,7 @@ const KEYS = [
   SCORE_HOME_SCORE_KEY, SCORE_AWAY_SCORE_KEY, SCORE_STATUS_KEY,
   RTMP_INGEST_URL_KEY, RTMP_STREAM_KEY_KEY, YOUTUBE_STUDIO_URL_KEY,
   DEST_YOUTUBE_URL_KEY, DEST_YOUTUBE_STREAM_KEY, DEST_GC_URL_KEY, DEST_GC_STREAM_KEY,
+  NTFY_TOPIC_KEY,
 ];
 
 const Admin = () => {
@@ -79,6 +81,7 @@ const Admin = () => {
     destYoutubeKey:   "",
     destGcUrl:        "",
     destGcKey:        "",
+    ntfyTopic:        "",
   });
 
   useEffect(() => {
@@ -112,6 +115,7 @@ const Admin = () => {
           destYoutubeKey:   map[DEST_YOUTUBE_STREAM_KEY] ?? "",
           destGcUrl:        map[DEST_GC_URL_KEY]         ?? "",
           destGcKey:        map[DEST_GC_STREAM_KEY]      ?? "",
+          ntfyTopic:        map[NTFY_TOPIC_KEY]          ?? "",
         });
       });
   }, [unlocked]);
@@ -141,6 +145,7 @@ const Admin = () => {
     destYoutubeKey:   DEST_YOUTUBE_STREAM_KEY,
     destGcUrl:        DEST_GC_URL_KEY,
     destGcKey:        DEST_GC_STREAM_KEY,
+    ntfyTopic:        NTFY_TOPIC_KEY,
   };
 
   const handleSave = async (partial: Partial<AdminSettings>) => {
