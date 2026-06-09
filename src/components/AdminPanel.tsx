@@ -80,8 +80,13 @@ function StatusDot({ on, label }: { on: boolean; label: string }) {
   );
 }
 
-function StatusBar() {
-  const { stats, statsUrl } = useRtmpStats();
+function StatusBar({
+  stats,
+  statsUrl,
+}: {
+  stats: ReturnType<typeof useRtmpStats>["stats"];
+  statsUrl: string;
+}) {
   const src   = !!stats?.srcConnected;
   const yt    = (stats?.pushCount ?? 0) >= 1;
   const gc    = (stats?.pushCount ?? 0) >= 2;
@@ -144,6 +149,8 @@ function Field({
 
 const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   const { toast } = useToast();
+  const { stats, statsUrl } = useRtmpStats();
+  const publisherActive = !!stats?.srcConnected;
   const [draft, setDraft] = useState<AdminSettings>(settings);
 
   // Sync when initial load lands from Supabase
@@ -222,7 +229,13 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
         destGcKey:      draft.destGcKey,
       });
       setSavedDest(true);
-      toast({ description: "Destinations saved — relay reloads within ~15 s." });
+      // Match what destination-watcher will actually do: defer the reload if
+      // there's an active publisher so we don't kill Mevo's session.
+      toast({
+        description: publisherActive
+          ? "Saved — will apply when the current stream ends (reload mid-broadcast would drop Mevo)."
+          : "Destinations saved — relay reloads within ~15 s.",
+      });
       setTimeout(() => setSavedDest(false), 2500);
     } finally {
       setSavingDest(false);
@@ -348,7 +361,7 @@ const AdminPanel = ({ settings, onSave }: AdminPanelProps) => {
   return (
     <div className="space-y-4">
       {/* ── Live status bar ── */}
-      <StatusBar />
+      <StatusBar stats={stats} statsUrl={statsUrl} />
 
       {/* Manual override — clear the home-page embed if auto-clear is slow */}
       <div className="flex justify-end -mt-2">

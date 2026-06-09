@@ -93,8 +93,36 @@ def write_config(dest1: str, dest2: str) -> None:
 
 
 def reload_nginx() -> None:
-    # SIGHUP-equivalent: graceful, keeps active RTMP streams alive across reload.
+    # `nginx -s reload` re-reads the config but for nginx-rtmp this rebuilds
+    # the `application live` block, which drops any active publisher session.
+    # Mevo would see "RTMP relay failed" and have to reconnect, killing the
+    # live stream for several seconds. has_active_publisher() is the gate
+    # that keeps us from reloading mid-broadcast.
     subprocess.run(["nginx", "-s", "reload"], check=True)
+
+
+STATS_URL_LOCAL = "http://127.0.0.1:8080/stat"
+
+
+def has_active_publisher() -> bool:
+    """True if nginx-rtmp's /stat shows a publisher (Mevo) currently connected.
+
+    Used to defer destination changes mid-broadcast: applying them now would
+    cause `nginx -s reload` to drop Mevo, which is the bug that surfaced as
+    a mid-stream 'RTMP relay failed' toast in the Mevo app.
+
+    Fail-safe: if /stat is unreachable (nginx restarting, etc.), return False
+    so we don't get stuck deferring forever.
+    """
+    try:
+        with urllib.request.urlopen(STATS_URL_LOCAL, timeout=3) as r:
+            xml = r.read().decode()
+    except Exception:
+        return False
+    # nginx-rtmp marks the publisher client with a self-closing <publishing/>
+    # tag inside its <client> element. Push children (the relay's outbound
+    # connections to YouTube / GameChanger) don't have this tag.
+    return "<publishing/>" in xml
 
 
 def mask(url: str) -> str:
@@ -115,18 +143,36 @@ def run_once() -> None:
 
 
 def run_loop() -> None:
-    """Poll Supabase forever; reload nginx when destinations change."""
+    """Poll Supabase forever; reload nginx when destinations change.
+
+    Defers reloads while a publisher is active so we don't drop Mevo
+    mid-broadcast — any pending change applies as soon as the stream ends.
+    """
     print("destination-watcher loop starting…", flush=True)
     last = resolve_destinations()
+    deferred_logged = False  # avoid log-spam during a long broadcast
     while True:
         time.sleep(INTERVAL)
         try:
             current = resolve_destinations()
-            if current != last:
-                write_config(*current)
-                reload_nginx()
-                print(f"reloaded: DEST1={mask(current[0])} DEST2={mask(current[1])}", flush=True)
-                last = current
+            if current == last:
+                continue
+
+            if has_active_publisher():
+                if not deferred_logged:
+                    print(
+                        f"deferring reload — active publisher; will apply when stream ends. "
+                        f"pending: DEST1={mask(current[0])} DEST2={mask(current[1])}",
+                        flush=True,
+                    )
+                    deferred_logged = True
+                continue
+
+            write_config(*current)
+            reload_nginx()
+            print(f"reloaded: DEST1={mask(current[0])} DEST2={mask(current[1])}", flush=True)
+            last = current
+            deferred_logged = False
         except Exception as e:
             print(f"loop error: {e}", flush=True)
 
