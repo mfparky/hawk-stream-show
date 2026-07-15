@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Settings, Radio } from "lucide-react";
 import Header from "@/components/Header";
@@ -10,8 +11,12 @@ import SponsorWall from "@/components/SponsorWall";
 import PastGamesPlaylist from "@/components/PastGamesPlaylist";
 import ViewerNameModal from "@/components/ViewerNameModal";
 import WelcomeBanner from "@/components/WelcomeBanner";
+import CheckLiveStreamButton from "@/components/CheckLiveStreamButton";
+import NextGameCountdown from "@/components/NextGameCountdown";
 import { useStreamUrl } from "@/hooks/useStreamUrl";
-import { useYouTubeLive } from "@/hooks/useYouTubeLive";
+import { useNextGameTime } from "@/hooks/useNextGameTime";
+import { useNextGameFromWidget } from "@/hooks/useNextGameFromWidget";
+import { useAutoDetectLive } from "@/hooks/useAutoDetectLive";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 import { useScoreSettings } from "@/hooks/useScoreSettings";
 import { useGCSync } from "@/hooks/useGCSync";
@@ -21,18 +26,28 @@ const Index = () => {
   const streamUrl    = useStreamUrl();
   const venue        = useVenueSettings();
   const score        = useScoreSettings();
+  const nextFromServer = useNextGameTime();
+  const nextFromWidget = useNextGameFromWidget();
+  const nextGameAt   = nextFromWidget ?? nextFromServer;
   const { viewer, register, loading: viewerLoading, needsPrompt } = useViewer();
 
   // Auto-sync scores from the GameChanger widget DOM when the scoreboard is enabled.
   // Falls back silently if the widget HTML doesn't match any known pattern.
   useGCSync(score.enabled);
 
-  // Auto-detect the live stream from the YouTube channel when no manual URL is set
-  const autoVideoId  = useYouTubeLive(streamUrl ? null : venue.channelId, venue.youtubeApiKey);
-  const autoUrl      = autoVideoId ? `https://www.youtube.com/watch?v=${autoVideoId}` : "";
-
-  const activeUrl    = streamUrl || autoUrl;
+  const activeUrl    = streamUrl;
   const hasVenue     = venue.venueLat !== null && venue.venueLon !== null;
+
+  // Auto-detect a live YouTube stream so visitors don't have to click the button.
+  useAutoDetectLive(venue.channelId, !!activeUrl, nextGameAt);
+
+  // When a past game is selected, play it inline where the stream would be
+  const [selectedPastVideoId, setSelectedPastVideoId] = useState<string | null>(null);
+  // Clear past-game selection if a real stream becomes available
+  useEffect(() => {
+    if (activeUrl) setSelectedPastVideoId(null);
+  }, [activeUrl]);
+  const playerUrl = activeUrl || (selectedPastVideoId ? `https://www.youtube.com/watch?v=${selectedPastVideoId}` : "");
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,14 +60,22 @@ const Index = () => {
         {/* Scoreboard — shown above video when enabled by admin */}
         <ScoreboardWidget />
 
-        {/* Live Stream — hero, full width */}
-        <YouTubeEmbed url={activeUrl} />
+        {/* Countdown to next scheduled game */}
+        <NextGameCountdown nextGameAt={nextGameAt} />
 
-        {/* Past games playlist — shown right under the "no stream" message */}
+        {/* Live Stream — hero, full width (also plays selected past games inline) */}
+        <YouTubeEmbed url={playerUrl} nextGameAt={nextGameAt} />
+
+        {/* Manual live-stream check — user-initiated to save API quota */}
+        {!activeUrl && <CheckLiveStreamButton channelId={venue.channelId} />}
+
+        {/* Past games playlist — shown under the player */}
         {!activeUrl && (
           <PastGamesPlaylist
             playlistId={venue.youtubePlaylistId}
             apiKey={venue.youtubeApiKey}
+            onSelect={setSelectedPastVideoId}
+            activeVideoId={selectedPastVideoId}
           />
         )}
 

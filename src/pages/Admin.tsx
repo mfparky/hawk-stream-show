@@ -24,8 +24,9 @@ import {
   DEST_YOUTUBE_STREAM_KEY,
   DEST_GC_URL_KEY,
   DEST_GC_STREAM_KEY,
+  NTFY_TOPIC_KEY,
 } from "@/lib/constants";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowLeft, Radio } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,10 +41,10 @@ const KEYS = [
   SCORE_HOME_SCORE_KEY, SCORE_AWAY_SCORE_KEY, SCORE_STATUS_KEY,
   RTMP_INGEST_URL_KEY, RTMP_STREAM_KEY_KEY, YOUTUBE_STUDIO_URL_KEY,
   DEST_YOUTUBE_URL_KEY, DEST_YOUTUBE_STREAM_KEY, DEST_GC_URL_KEY, DEST_GC_STREAM_KEY,
+  NTFY_TOPIC_KEY,
 ];
 
 const Admin = () => {
-  const navigate = useNavigate();
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
   const [phrase, setPhrase]     = useState("");
   const [failed, setFailed]     = useState(false);
@@ -80,6 +81,7 @@ const Admin = () => {
     destYoutubeKey:   "",
     destGcUrl:        "",
     destGcKey:        "",
+    ntfyTopic:        "",
   });
 
   useEffect(() => {
@@ -113,38 +115,50 @@ const Admin = () => {
           destYoutubeKey:   map[DEST_YOUTUBE_STREAM_KEY] ?? "",
           destGcUrl:        map[DEST_GC_URL_KEY]         ?? "",
           destGcKey:        map[DEST_GC_STREAM_KEY]      ?? "",
+          ntfyTopic:        map[NTFY_TOPIC_KEY]          ?? "",
         });
       });
   }, [unlocked]);
 
-  const handleSave = async (next: AdminSettings) => {
-    setSettings(next);
-    const rows = [
-      { key: STREAM_URL_KEY,      value: next.streamUrl      },
-      { key: CHANNEL_ID_KEY,      value: next.channelId      },
-      { key: YOUTUBE_API_KEY_KEY, value: next.youtubeApiKey  },
-      { key: YOUTUBE_PLAYLIST_ID_KEY, value: next.youtubePlaylistId },
-      { key: VENUE_NAME_KEY,      value: next.venueName      },
-      { key: VENUE_ADDRESS_KEY,   value: next.venueAddress   },
-      { key: VENUE_LAT_KEY,       value: next.venueLat       },
-      { key: VENUE_LON_KEY,       value: next.venueLon       },
-      { key: SCORE_ENABLED_KEY,   value: next.scoreEnabled   },
-      { key: SCORE_HOME_TEAM_KEY, value: next.scoreHomeTeam  },
-      { key: SCORE_AWAY_TEAM_KEY, value: next.scoreAwayTeam  },
-      { key: SCORE_HOME_SCORE_KEY,value: next.scoreHomeScore },
-      { key: SCORE_AWAY_SCORE_KEY,value: next.scoreAwayScore },
-      { key: SCORE_STATUS_KEY,       value: next.scoreStatus      },
-      { key: RTMP_INGEST_URL_KEY,    value: next.rtmpIngestUrl    },
-      { key: RTMP_STREAM_KEY_KEY,    value: next.rtmpStreamKey    },
-      { key: YOUTUBE_STUDIO_URL_KEY, value: next.youtubeStudioUrl },
-      { key: DEST_YOUTUBE_URL_KEY,    value: next.destYoutubeUrl   },
-      { key: DEST_YOUTUBE_STREAM_KEY, value: next.destYoutubeKey   },
-      { key: DEST_GC_URL_KEY,         value: next.destGcUrl        },
-      { key: DEST_GC_STREAM_KEY,      value: next.destGcKey        },
-    ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
+  // Maps each AdminSettings field to its Supabase settings.key.
+  // Lets the panel save only the fields it touched (so the score +/- buttons
+  // never accidentally publish a half-typed destination key, etc).
+  const KEY_MAP: Record<keyof AdminSettings, string> = {
+    streamUrl:        STREAM_URL_KEY,
+    channelId:        CHANNEL_ID_KEY,
+    youtubeApiKey:    YOUTUBE_API_KEY_KEY,
+    youtubePlaylistId:YOUTUBE_PLAYLIST_ID_KEY,
+    venueName:        VENUE_NAME_KEY,
+    venueAddress:     VENUE_ADDRESS_KEY,
+    venueLat:         VENUE_LAT_KEY,
+    venueLon:         VENUE_LON_KEY,
+    scoreEnabled:     SCORE_ENABLED_KEY,
+    scoreHomeTeam:    SCORE_HOME_TEAM_KEY,
+    scoreAwayTeam:    SCORE_AWAY_TEAM_KEY,
+    scoreHomeScore:   SCORE_HOME_SCORE_KEY,
+    scoreAwayScore:   SCORE_AWAY_SCORE_KEY,
+    scoreStatus:      SCORE_STATUS_KEY,
+    rtmpIngestUrl:    RTMP_INGEST_URL_KEY,
+    rtmpStreamKey:    RTMP_STREAM_KEY_KEY,
+    youtubeStudioUrl: YOUTUBE_STUDIO_URL_KEY,
+    destYoutubeUrl:   DEST_YOUTUBE_URL_KEY,
+    destYoutubeKey:   DEST_YOUTUBE_STREAM_KEY,
+    destGcUrl:        DEST_GC_URL_KEY,
+    destGcKey:        DEST_GC_STREAM_KEY,
+    ntfyTopic:        NTFY_TOPIC_KEY,
+  };
 
+  const handleSave = async (partial: Partial<AdminSettings>) => {
+    setSettings((prev) => ({ ...prev, ...partial }));
+    const rows = Object.entries(partial)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => ({
+        key:        KEY_MAP[k as keyof AdminSettings],
+        value:      v,
+        updated_at: new Date().toISOString(),
+      }));
+    if (rows.length === 0) return;
     await supabase.from("settings").upsert(rows);
-    navigate("/");
   };
 
   if (!unlocked) {

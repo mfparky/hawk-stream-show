@@ -78,9 +78,14 @@ the bottleneck — drop to 720p / 3 Mbps.
    - **YouTube** and **GameChanger** dots should follow once the relay
      opens its push connections (usually 2–5 s later).
    - The big banner flips to **LIVE** with the incoming bitrate.
-4. `https://streamthehawks.ca` auto-detects the YouTube live broadcast and
-   embeds it once YouTube reports the stream as active (typically 10–30 s
-   after the relay starts pushing).
+4. In **YouTube Studio → Live**, confirm two things before fans can see it:
+   - Click the blue **GO LIVE** button. Without this, the relay is sending
+     bytes but YouTube isn't broadcasting them publicly.
+   - **Visibility = Public** (not Unlisted/Private). The home page uses the
+     public YouTube Data API and won't see Unlisted broadcasts.
+5. `https://streamthehawks.ca` auto-detects the YouTube live broadcast and
+   embeds it within ~30 s of step 4 (tap the **Check Live Stream** button
+   on the home page to force an immediate re-check).
 
 ## Stopping the stream
 
@@ -100,6 +105,7 @@ Tap **End broadcast** in the Mevo app. Within a few seconds:
 | Bitrate flapping / "Source" pulsing offline | Weak uplink. Lower Mevo bitrate, or move closer to the hotspot/router.             |
 | `/relay` shows "Relay server not configured"| Set the stats URL once: `http://138.197.140.107:8080/stat` in the **Relay server URL** panel. |
 | Page shows OFFLINE but Mevo says live       | The stats-pusher container probably crashed. `docker compose ps` on the relay host. |
+| YT relay green but home page doesn't embed  | Broadcast is set to **Unlisted/Private** in YouTube Studio. Flip to **Public** under Live → Settings → Visibility. Or the **GO LIVE** button wasn't clicked yet. |
 
 ## Rotating destination keys (no SSH)
 
@@ -122,6 +128,61 @@ Typical flow before each game:
 The fields in `.env` (`DEST1`, `DEST2`) are only used as bootstrap
 fallback if Supabase is unreachable at boot. Don't bother updating them
 day-to-day — just use `/admin`.
+
+---
+
+## Stream-down push alerts (recommended)
+
+Get a push notification on your phone within ~30 s of YouTube or
+GameChanger dropping mid-game — no need to babysit `/relay`.
+
+How it works: `stats-pusher` on the droplet already polls the relay's
+`/stat` every 5 s. When it sees the source connected but a push
+destination missing for more than `ALERT_DELAY_SEC` (default 30), it
+sends a push via [ntfy.sh](https://ntfy.sh) — a free public push relay.
+When the destination recovers, you get a "stream recovered" notification.
+
+### One-time setup
+
+1. Install **ntfy** on your phone — iOS App Store / Google Play, free.
+2. In the app, tap **+** → **Subscribe to topic** → pick a name only you
+   know, e.g. `hawks-stream-jx7q9kp`. **The topic name is the auth** —
+   anyone who guesses it can spam you, so use random letters/digits.
+3. On the droplet, add the topic name to `rtmp-relay/.env`:
+
+   ```sh
+   NTFY_TOPIC=hawks-stream-jx7q9kp
+   ```
+
+4. Restart `stats-pusher`:
+
+   ```sh
+   docker compose up -d --force-recreate stats-pusher
+   ```
+
+5. Confirm `docker compose logs stats-pusher` shows
+   `stats-pusher starting… (alerts: on)`.
+
+### Testing the alert
+
+While Mevo is broadcasting, briefly change `dest_gc_url` in `/admin` to
+something invalid (e.g., add a `Z` to the host) and save. Within
+~30 s + 15 s (alert delay + watcher poll) you should get a push that
+says "One push destination dropped". Restore the URL and you should get
+a recovery push within another minute.
+
+### Tuning
+
+| Env var               | Default | What it does                                                        |
+| --------------------- | ------- | ------------------------------------------------------------------- |
+| `NTFY_TOPIC`          | (empty) | Topic to publish to. Empty = alerts disabled.                       |
+| `EXPECTED_PUSH_COUNT` | `2`     | How many push destinations should be alive (YouTube + GC = 2).      |
+| `ALERT_DELAY_SEC`     | `30`    | Seconds the stream must stay degraded before alerting.              |
+| `RELAY_LINK`          | `/relay`| URL opened when you tap the notification.                           |
+
+If you ever stream with only one destination configured, set
+`EXPECTED_PUSH_COUNT=1` so the second-destination-not-connected isn't
+treated as an outage.
 
 ---
 

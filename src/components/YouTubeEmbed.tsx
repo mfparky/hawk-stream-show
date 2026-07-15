@@ -2,7 +2,30 @@ import { useEffect, useState } from "react";
 
 interface YouTubeEmbedProps {
   url: string;
+  nextGameAt?: Date | null;
 }
+
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+const Countdown = ({ target }: { target: Date }) => {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = target.getTime() - now;
+  if (diff <= 0) return <>any moment now…</>;
+  return <>in {formatCountdown(diff)}</>;
+};
 
 const extractVideoId = (url: string): string | null => {
   if (!url) return null;
@@ -19,10 +42,17 @@ const extractVideoId = (url: string): string | null => {
   return null;
 };
 
-const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
+const YouTubeEmbed = ({ url, nextGameAt }: YouTubeEmbedProps) => {
   const videoId = extractVideoId(url);
   const [isPlaying, setIsPlaying] = useState(false);
   const [embedBlocked, setEmbedBlocked] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Timer so we can hide/show the fallback based on actual time
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // Reset state whenever the URL changes
   useEffect(() => {
@@ -51,7 +81,10 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
   const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
   const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 
+  const hasUpcomingGame = nextGameAt ? nextGameAt.getTime() > now : false;
+
   if (!videoId) {
+    if (hasUpcomingGame) return null;
     return (
       <div className="flex aspect-[32/9] w-full items-center justify-center rounded-lg border border-border bg-muted/30 px-6 text-center">
         <p className="text-muted-foreground text-lg sm:text-xl md:text-2xl font-semibold">
