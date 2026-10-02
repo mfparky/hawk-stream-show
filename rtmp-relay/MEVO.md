@@ -106,6 +106,19 @@ Tap **End broadcast** in the Mevo app. Within a few seconds:
 | `/relay` shows "Relay server not configured"| Set the stats URL once: `http://138.197.140.107:8080/stat` in the **Relay server URL** panel. |
 | Page shows OFFLINE but Mevo says live       | The stats-pusher container probably crashed. `docker compose ps` on the relay host. |
 | YT relay green but home page doesn't embed  | Broadcast is set to **Unlisted/Private** in YouTube Studio. Flip to **Public** under Live → Settings → Visibility. Or the **GO LIVE** button wasn't clicked yet. |
+| Mevo pops **"RTMP relay failed"** mid-stream and won't reconnect | Was a known issue — `nginx.conf.template` now sets `ping`, `ping_timeout`, `timeout`, and `drop_idle_publisher 30s` so the publisher slot auto-frees within 30s and Mevo's reconnect goes through cleanly. If it still happens, drop Mevo bitrate to 3 Mbps and try again. |
+
+## Relay tuning for Mevo reconnect reliability
+
+The `rtmp` server block in `nginx.conf.template` has four non-default directives chosen specifically to keep the Mevo→relay leg resilient:
+
+| Directive                      | Why                                                                                                         |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `ping 30s; ping_timeout 15s;`  | RTMP-level keepalive. Prevents cell-carrier NATs / the phone from silently killing an "idle" TCP connection. |
+| `timeout 30s;`                 | If a push destination (YT or GC) stalls writing for 30s, bail instead of back-pressuring the publisher.      |
+| `drop_idle_publisher 30s;`     | Frees the publisher slot after 30s of no frames so Mevo's reconnect isn't rejected as a duplicate.           |
+
+Without these the default nginx-rtmp behavior is: no keepalive, no idle-publisher cleanup, 60s write timeout — which produced the "Mevo works to YouTube direct but not through our relay" symptom on previous games.
 
 ## Rotating destination keys (no SSH)
 
