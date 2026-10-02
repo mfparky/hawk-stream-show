@@ -11,9 +11,28 @@ rtmp {
         listen 1935;
         chunk_size 4096;
 
+        # ── Keepalive / timeout tuning for Mevo reconnect reliability ────
+        # Default nginx-rtmp has no RTMP-level keepalive, so cell-carrier
+        # NATs and the operator's phone can silently drop the Mevo→relay
+        # TCP connection while Mevo thinks it's still live. `ping` makes
+        # nginx send RTMP keepalive messages the publisher must ack.
+        ping 30s;
+        ping_timeout 15s;
+        # Socket write timeout — if a push destination (YouTube/GC) stalls
+        # for 30s, bail instead of back-pressuring the Mevo publisher.
+        timeout 30s;
+
         application live {
             live on;
             record off;
+
+            # Frees the publisher slot after 30s with no audio/video from
+            # Mevo. Without this, a brief network blip can leave the slot
+            # "in use" and Mevo's reconnect attempt gets rejected as a
+            # duplicate publisher — the "doesn't reconnect through our
+            # relay" symptom. 30s is well above legit encoder pause times
+            # (frames arrive every ~40ms at 30fps).
+            drop_idle_publisher 30s;
 
             # Push destinations are written here by destination-watcher.py at boot
             # and re-rendered + `nginx -s reload`'d when /admin changes them.
